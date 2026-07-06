@@ -116,3 +116,26 @@ Updated blueprint with: content-type routing table (8 content types), production
 Ran comprehensive audit: fixed 7 broken links from archived pages, removed 2 dangling sources refs, fixed 4 dangling related refs, added 3 missing pages from index (Project Montage, AI video models comparison, chart), fixed README entity count (25) and stale example path, updated overview with complete entity list, added AGENTS.md/SKILL.md/scripts/ to CLAUDE.md structure, added scripts/ to AGENTS.md, added chart reference to index, hyperlinked archive entries, created missing assets directory, updated stale example slugs in CLAUDE.md and schema.
 
 Overall tally: 16 active entities, 9 archived entities, 3 concepts, 4 guides, 3 comparisons, 1 chart, 0 sources, plus SKILL.md at root level.
+
+## [2026-07-06] adapter | Unified Adapter — mcp_video hybrid architecture
+
+Architected, built, and verified the Unified Adapter — a single import surface combining mcp_video.Client (60+ safe wrappers) with audited ffmpeg_adapter functions (44 audited+unique). Added 131 exportable symbols across three layers:
+
+### New Files
+- **`kb/tools/_mcp_bridge.py`** — 100-exports bridge module wrapping ~65 safe mcp_video methods. Each wrapper handles graceful degradation (mcp_video unavailable), BaseModel→dict conversion, and Hard Rule enforcement. Excludes 4 known-buggy mcp_video functions (ai_remove_silence, merge, pipeline, ai_transcribe).
+- **`kb/tools/unified_adapter.py`** — 131-symbol single import surface routing: 7 overlapping functions → mcp_video, 92 new capabilities → mcp_video, 3 audited → ffmpeg_adapter, 29 unique → ffmpeg_adapter. Supports `edit.info()`, `edit.merge()`, etc.
+- **`scripts/verify_mcp_video.py`** — 99/99 checks on mcp_video 1.5.1 availability
+- **`scripts/verify_unified_adapter.py`** — 159/159 checks on routing correctness
+- **`kb/wiki/entities/mcp-video.md`** — entity page documenting 106 tools + 4 known bugs
+- **`kb/wiki/concepts/unified-adapter.md`** — concept page with architecture diagram
+
+### Changes
+- **`SKILL.md`** — Added Hard Rule #25 (use unified_adapter), updated Core Stack order
+- **`ffmpeg_adapter.py`** — Added `DeprecationWarning` on direct import (points to unified_adapter)
+- **`test_ffmpeg_adapter.py`, `test_transcribe.py`** — Suppressed deprecation warning in legacy test suites
+- **`kb/wiki/index.md`** — Added mcp-video entity and unified-adapter concept
+
+### Routing Decisions
+- mcp_video wins for: info, trim, resize, speed, stabilize, color_grade, text_subtitles
+- ffmpeg_adapter wins for: merge, silence_remove, transcribe (buggy/inferior in mcp_video)
+- ffmpeg_adapter unique: J/L-cuts, scopes, quality metrics, project files, render profiles, loudnorm

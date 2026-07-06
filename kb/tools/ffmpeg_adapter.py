@@ -1103,3 +1103,13 @@ def project_audit_report(project_path: str) -> dict:
 # `from kb.tools.ffmpeg_adapter import edit` patterns:
 import sys as _sys
 edit = _sys.modules[__name__]
+
+# Deprecation: prefer unified_adapter
+import warnings as _warn
+_warn.warn(
+    "ffmpeg_adapter is deprecated. Use `from kb.tools.unified_adapter import edit` instead. "
+    "The unified adapter combines mcp_video.Client (60+ new capabilities) "
+    "with all audited ffmpeg_adapter functions in a single import surface.",
+    DeprecationWarning,
+    stacklevel=2,
+)

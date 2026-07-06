@@ -7,7 +7,9 @@ End-to-end test of the ffmpeg_adapter pipeline:
 Generates synthetic test media.  Run with 'python scripts/test_ffmpeg_adapter.py'.
 """
 
-import sys, os, pathlib, shutil, tempfile, json
+import sys, os, pathlib, shutil, tempfile, json, warnings
+# Suppress deprecation — this is the legacy test suite
+warnings.filterwarnings("ignore", message=".*ffmpeg_adapter is deprecated.*", category=DeprecationWarning)
 # Ensure ffmpeg_adapter importable even when running from repo root
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from kb.tools import ffmpeg_adapter as edit

@@ -26,6 +26,7 @@ updated: 2026-07-06
 
 ## Entities — MCP & Tooling
 
+- [mcp-video](entities/mcp-video) — MCP server, 106 tools, primary surface via unified adapter
 - [MCP Servers for Video Editing](entities/mcp-video-servers) — 15+ free MCP servers wrapping FFmpeg (119 tools in best)
 - [MakeMyClip Editor](entities/make-my-clip) — "FFmpeg you can talk to", zero-config, MIT
 - [CutAgent](entities/cutagent) — FFmpeg for AI agents, declarative EDL, structured JSON output
@@ -48,6 +49,7 @@ updated: 2026-07-06
 
 ## Concepts
 
+- [Unified Adapter](concepts/unified-adapter) — single import surface, routes 131 symbols to best implementation
 - [Multi-Agent Orchestration](concepts/multi-agent-orchestration) — how multiple AI agents coordinate in video editing
 - [Self-Evaluation Loop](concepts/self-evaluation-loop) — agents that score their own output and retry
 - [Agentic vs Generative](concepts/agentic-vs-generative) — the two layers of AI video editing

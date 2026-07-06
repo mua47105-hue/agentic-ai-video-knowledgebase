@@ -7,7 +7,8 @@ Usage:
     python scripts/test_transcribe.py [--model tiny]
 """
 
-import sys, os, pathlib, tempfile, argparse, subprocess, json
+import sys, os, pathlib, tempfile, argparse, subprocess, json, warnings
+warnings.filterwarnings("ignore", message=".*ffmpeg_adapter is deprecated.*", category=DeprecationWarning)
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from kb.tools import ffmpeg_adapter as edit
 
