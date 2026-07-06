@@ -1,30 +1,31 @@
-# AI Video Editing Wiki — Schema
+# AI Video Knowledge Base — Agent Instructions
 
 You are the wiki maintainer for an AI video editing knowledge base.
 Your job is to build and maintain a structured wiki from sources about AI agents that edit videos autonomously.
 
-**Note: The primary agent instructions are in `/CLAUDE.md` (root). This file is a reference copy.**
-
 ## Directory structure
 
 ```
-kb/
-├── raw/          # Source documents (immutable — you read, never write)
-│   └── assets/   # Images, diagrams from sources
-├── wiki/
-│   ├── index.md           # Content catalog (all pages listed by category)
-│   ├── log.md             # Chronological record of all operations
-│   ├── overview.md        # Top-level synthesis of the current understanding
-│   ├── entities/          # Tools, companies, people, models
-│   ├── concepts/          # Core ideas, techniques, terminology
-│   ├── sources/           # Summaries of ingested source documents
-│   ├── guides/            # How-to guides, workflows, tutorials
-│   ├── comparisons/       # Side-by-side comparisons of tools / approaches
-│   └── charts/            # Python-generated matplotlib charts
-├── schema/
-│   └── AGENTS.md          # This file — the schema and conventions
-└── tools/
-    └── search.py          # CLI search tool over wiki pages
+├── CLAUDE.md              # This file — your complete instructions
+├── README.md              # Human-readable overview
+├── kb/
+│   ├── raw/               # Source documents (immutable — you read, never write)
+│   │   └── assets/        # Images, diagrams from sources
+│   ├── wiki/
+│   │   ├── index.md       # Content catalog (all pages listed by category)
+│   │   ├── log.md         # Chronological record of all operations
+│   │   ├── overview.md    # Top-level synthesis of current understanding
+│   │   ├── entities/      # Tools, companies, people, models
+│   │   ├── concepts/      # Core ideas, techniques, terminology
+│   │   ├── sources/       # Summaries of ingested source documents
+│   │   ├── guides/        # How-to guides, workflows, tutorials
+│   │   ├── comparisons/   # Side-by-side comparisons
+│   │   └── charts/        # Python-generated matplotlib charts
+│   ├── schema/
+│   │   └── AGENTS.md      # Reference copy of this schema
+│   └── tools/
+│       ├── search.py      # CLI search tool over wiki pages
+│       └── chart_models.py # Chart generator
 ```
 
 ## Page conventions
@@ -106,7 +107,7 @@ When the user requests a health-check:
 
 ### Chart generation
 
-- Use matplotlib with a clean, dark-themed or light-themed style consistent with the wiki.
+- Use matplotlib with a clean style consistent with the wiki.
 - Save charts to `wiki/charts/` with descriptive filenames.
 - Create a companion markdown page in `wiki/charts/` describing the chart.
 - Reference the chart from relevant entity/concept/guide pages.
@@ -121,3 +122,13 @@ Pass `--help` for options.
 
 - `index.md` is the primary navigation. Keep it accurate after every operation.
 - `log.md` entries use the format: `## [YYYY-MM-DD] type | Title` where type is `ingest`, `query`, `lint`, `chart`, or `update`. This allows grep-based filtering.
+
+## Key files at a glance
+
+| File | Purpose |
+|------|---------|
+| `kb/wiki/index.md` | Content catalog — read this first to find relevant pages |
+| `kb/wiki/log.md` | Chronological record of all operations |
+| `kb/wiki/overview.md` | Living top-level synthesis |
+| `kb/tools/search.py` | Search CLI — `python3 kb/tools/search.py "query"` |
+| `kb/tools/chart_models.py` | Chart generator — `python3 kb/tools/chart_models.py` |
