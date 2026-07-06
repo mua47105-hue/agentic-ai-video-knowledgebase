@@ -13,10 +13,16 @@ updated: 2026-07-06
 
 - [Overview](overview) — top-level synthesis of AI video editing agents
 - [Complete Free AI Video Editing Stack](guides/free-ai-video-editing-stack) — step-by-step guide to the free stack
+- [Build Your Own AI Video Editor](guides/build-your-own-ai-video-editor) — 5-level blueprint from MVP to fully autonomous
+- [FFmpeg Command Reference for AI Agents](guides/ffmpeg-command-reference) — exhaustive command patterns by task
+- [Local LLM Setup for Video Editing](guides/local-llm-setup) — Ollama, Qwen2.5-Coder, RAG setup, benchmarks
 
 ## Guides
 
 - [Complete Free AI Video Editing Stack](guides/free-ai-video-editing-stack) — 4 options: MCP, FFmpeg+LLM, NLE control, Remotion
+- [Build Your Own AI Video Editor](guides/build-your-own-ai-video-editor) — 5-level blueprint, decision flowchart, install script
+- [FFmpeg Command Reference](guides/ffmpeg-command-reference) — 17 categories, probing to batch processing
+- [Local LLM Setup](guides/local-llm-setup) — Qwen2.5-Coder, Ollama integration, RAG for FFmpeg accuracy
 
 ## Entities — MCP & Tooling
 
@@ -48,6 +54,11 @@ updated: 2026-07-06
 ## Comparisons
 
 - [Agentic Frameworks 2026](comparisons/agentic-frameworks-2026) — 10 frameworks compared
+- [MCP Server Matrix 2026](comparisons/mcp-servers-2026) — 12 MCP servers across 30+ feature dimensions
+
+## Skills
+
+- [SKILL.md](../../SKILL.md) — Complete agent skill for AI video editing (root level, auto-discoverable)
 
 ## Charts
 

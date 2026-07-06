@@ -72,3 +72,23 @@ Researched and documented 4 more entities:
 - **Nano Banana** — keyframe lock for character consistency in AI video
 
 Running tally: 21 entities, 3 concepts, 0 sources, 0 guides, 0 comparisons, 0 charts.
+
+## [2026-07-06] guide | MCP Server Comparison Matrix — 12 servers across 30+ dimensions
+
+Created definitive comparison of all known free MCP servers: 12 main servers, 5 transcription servers, 4 NLE control servers. Feature matrix with 30+ edit operations. Winner-by-use-case recommendations. Architecture comparison (tool-per-op vs pipeline vs minimal-executor vs NLE-control).
+
+## [2026-07-06] skill | SKILL.md — Complete AI Video Editing Agent Skill
+
+Created `SKILL.md` at root level — auto-discoverable by any LLM agent. Includes: identity, core stack, probe-plan-edit-review-iterate workflow, MCP tool usage by task, 50+ raw FFmpeg commands organized by operation, workflow templates (podcast-to-shorts, silence removal, auto-subtitles), edge case handling, validation checklist, config snippets for all agents, LLM recommendations.
+
+## [2026-07-06] guide | FFmpeg Command Reference for AI Agents
+
+Created exhaustive FFmpeg command reference organized by editing task (17 categories): probing, trimming, concatenation, transitions, color grading, subtitles, audio, speed, stabilization, scene detection, silence removal, effects, format conversion, compositing, quality/compression, batch processing, best practices. 100+ validated command patterns.
+
+## [2026-07-06] guide | Local LLM Setup for Video Editing
+
+Created guide for fully local, free LLM setup. Covers: Qwen2.5-Coder (88% FFmpeg accuracy per ELLMPEG paper) vs Llama 3.2 vs DeepSeek Coder, Ollama installation, integration with MCP servers/CutAgent/wtffmpeg, quantization options, GPU/CPU optimization, RAG setup for better accuracy, detailed benchmark table, decision matrix for local vs cloud.
+
+## [2026-07-06] guide | Build Your Own AI Video Editor — 5-Level Blueprint
+
+Created step-by-step blueprint from MVP (5 mins) to fully autonomous (1 month). Each level has exact steps, MCP config, capabilities, and estimated build time. Includes: architecture diagram, decision flowchart, agent prompt template, full installation script, verification checklist. Four levels: MVP → Workstation → Autonomous → Professional → Fully Autonomous.

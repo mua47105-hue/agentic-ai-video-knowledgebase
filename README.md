@@ -87,10 +87,11 @@ Then:
 
 ## Current Contents (July 2026)
 
-- **21 entities**: VideoAgent, Crayotter, OpenMontage, UniVA, X-Cut, Runway Gen-4, Pika 2.5, Google Veo 3, Sora (discontinued), Kling 3.0, EzVideo, Shorz, CutClaw, video-use, AVE, Pilipili-AutoVideo, AI_Editor, Magicroll, Project Montage, Nano Banana
+- **24 entities**: MCP servers, Whisper ecosystem, video-use, MakeMyClip, CutAgent, CutRoom, VideoAgent, OpenMontage, Crayotter, UniVA, CutClaw, AVE, AI_Editor, Pilipili-AutoVideo, X-Cut, Project Montage (archived: generative models)
 - **3 concepts**: Multi-Agent Orchestration, Self-Evaluation Loop, Agentic vs Generative
-- **2 comparisons**: AI video models, agentic frameworks
-- **1 chart**: Model quality vs speed vs cost
+- **3 comparisons**: MCP server matrix (12 servers), agentic frameworks (10 frameworks), AI video models
+- **Root-level SKILL.md**: Auto-discoverable by any LLM agent, complete video editing skill
+- **4 guides**: Free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint
 
 ## Requirements
 

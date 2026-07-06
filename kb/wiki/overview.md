@@ -46,10 +46,12 @@ The agent understands your intent, calls the right tools, and produces the finis
 ## Current wiki contents
 
 - **Editing tools**: video-use, MakeMyClip, CutAgent, CutRoom, OpenMontage, AVE, AI_Editor, Crayotter
-- **MCP ecosystem**: 15+ free MCP servers for FFmpeg operations
+- **MCP ecosystem**: 15+ free MCP servers for FFmpeg operations (119 tools in mcp-video)
 - **Transcription**: Whisper ecosystem (whisper.cpp, faster-whisper, WhisperX)
-- **Guides**: Complete free stack setup, how to configure MCP servers
+- **Guides**: Complete free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint
 - **Frameworks**: VideoAgent, OpenMontage, Crayotter, UniVA
+- **Skills**: `SKILL.md` at root — auto-discoverable by any LLM agent
+- **Comparisons**: MCP server feature matrix (12 servers, 30+ dimensions), 10 agentic frameworks
 
 ## Key questions
 
