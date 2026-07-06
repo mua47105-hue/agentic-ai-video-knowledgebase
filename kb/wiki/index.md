@@ -18,17 +18,17 @@ updated: 2026-07-06
 - [OpenMontage](entities/openmontage) — Open-source agentic video production system, 12 pipelines, 52 tools
 - [UniVA](entities/univa) — Universal Video Agent, Plan-Act dual-agent, MCP-native
 - [X-Cut](entities/x-cut) — Chat-driven agent with real-time Remotion rendering (concept stage)
-- ~~Runway Gen-4~~ *(not yet documented)*
-- ~~Pika 2.5~~ *(not yet documented)*
-- ~~Google Veo 3~~ *(not yet documented)*
-- ~~Sora~~ *(not yet documented)*
-- ~~Kling 3.0~~ *(not yet documented)*
-- ~~EzVideo~~ *(not yet documented)*
-- ~~Shorz~~ *(not yet documented)*
-- ~~CutClaw~~ *(not yet documented)*
-- ~~video-use~~ *(not yet documented)*
-- ~~Agentic Video Editor (AVE)~~ *(not yet documented)*
-- ~~Pilipili-AutoVideo~~ *(not yet documented)*
+- [Runway Gen-4](entities/runway-gen-4) — Professional standard, camera controls, Gen-4.5 native audio
+- [Pika 2.5](entities/pika-2-5) — Fastest generation (8-15s), viral effects, best free tier
+- [Google Veo 3](entities/google-veo-3) — Google DeepMind, native audio, narrative leader
+- [Sora](entities/sora) — OpenAI, discontinued April 2026, API ends Sept 2026
+- [Kling 3.0](entities/kling-3-0) — Native 4K, multi-language audio, cinematic alternative
+- [EzVideo](entities/ezvideo) — Autonomous desktop NLE, Gemini as film director (private beta)
+- [Shorz](entities/shorz) — Desktop AI editor, MCP-native agent-callable, credit-based
+- [CutClaw](entities/cutclaw) — Music-synchronized long-form editing, multi-agent
+- [video-use](entities/video-use) — Claude Code skill, transcript-first, self-evaluating
+- [Agentic Video Editor (AVE)](entities/agentic-video-editor) — CLI pipeline with retry gates, YAML-defined
+- [Pilipili-AutoVideo](entities/pilipili-autovideo) — Local end-to-end, Mem0 memory, CapCut export
 - ~~AI_Editor~~ *(not yet documented)*
 - ~~Magicroll AI Agent~~ *(not yet documented)*
 - ~~Google Project Montage~~ *(not yet documented)*

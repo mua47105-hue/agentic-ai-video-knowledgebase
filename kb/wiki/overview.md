@@ -11,7 +11,7 @@ related: [video-agent, crayotter, openmontage, univa, x-cut, multi-agent-orchest
 
 *This page is a living synthesis. It evolves as sources are ingested.*
 
-**Status: early but growing.** 5 agentic frameworks documented, 3 concept pages, 2 key concepts identified. The landscape splits into agentic frameworks (the editors) and generative models (the clip makers).
+**Status: well underway.** 17 entities, 3 concepts documented. The landscape splits into agentic frameworks (the editors) and generative models (the clip makers). Sora is being discontinued (April/Sept 2026). The market is now a three-horse race between Runway Gen-4.5 (production control), Google Veo 3.1 (narrative/audio), and Kling 3.0 (native 4K value).
 
 ## What this wiki covers
 
