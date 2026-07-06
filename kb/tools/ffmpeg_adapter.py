@@ -39,6 +39,28 @@ def _probe_json(path: str) -> dict:
     return json.loads(res.stdout)
 
 
+def _probe_duration(path: str) -> float:
+    d = _probe_json(path)
+    return float(d.get("format", {}).get("duration", 0))
+
+
+def _probe_fps(path: str) -> float:
+    d = _probe_json(path)
+    v = next((s for s in d.get("streams", []) if s.get("codec_type") == "video"), {})
+    r = v.get("r_frame_rate", "0/1")
+    return _parse_fraction(r)
+
+
+def _parse_fraction(s: str) -> float:
+    if "/" in s:
+        parts = s.split("/")
+        try:
+            return float(parts[0]) / float(parts[1]) if len(parts) == 2 and float(parts[1]) != 0 else 0.0
+        except (ValueError, ZeroDivisionError):
+            return 0.0
+    return 0.0
+
+
 def _ensure_parent(path: str) -> None:
     pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -60,7 +82,7 @@ def info(path: str) -> dict:
         "duration": float(fmt.get("duration", 0)),
         "width": v.get("width"),
         "height": v.get("height"),
-        "fps": eval(v.get("r_frame_rate", "0/1")) if "/" in v.get("r_frame_rate", "") else 0,
+        "fps": _parse_fraction(v.get("r_frame_rate", "0/1")),
         "video_codec": v.get("codec_name"),
         "audio_codec": a.get("codec_name"),
         "has_audio": "audio" in [s.get("codec_type") for s in d.get("streams", [])],
@@ -71,12 +93,14 @@ def info(path: str) -> dict:
 
 def trim(input: str, output: str, start: str = "", end: str = "",
          duration: str = "", accurate: bool = True) -> str:
-    """Cut a segment.  accurate=True re-encodes (frame-accurate)."""
+    """Cut a segment.  accurate=True re-encodes (frame-accurate).
+    -ss before -i for fast keyframe seek; re-encode for frame accuracy."""
     _check_ffmpeg()
     _ensure_parent(output)
-    cmd = [_FFMPEG, "-i", input]
+    cmd = [_FFMPEG]
     if start:
         cmd += ["-ss", start]
+    cmd += ["-i", input]
     if accurate:
         cmd += ["-c:v", "libx264", "-c:a", "aac"]
     else:
@@ -112,24 +136,31 @@ def merge(inputs: list[str], output: str, transition: str = "",
 
 def _run_xfade_chain(inputs: list[str], output: str,
                      transition: str, dur: float) -> None:
-    # Build filter_complex for n-1 xfades between n clips
+    """Chain n clips with xfade/acrossfade.  Probes each clip for
+    actual duration + fps; correct offset math for n>2; forces CFR
+    after setpts for FFmpeg 7.x compatibility."""
     n = len(inputs)
-    seg_dur = 5  # take first 5s of each clip (or trim to shortest)
+    durations = [_probe_duration(inp) for inp in inputs]
+    fps = _probe_fps(inputs[0]) or 30
     filters = []
-    for i, inp in enumerate(inputs):
-        filters.append(f"[{i}:v]trim=0:{seg_dur},setpts=PTS-STARTPTS[v{i}]")
-        filters.append(f"[{i}:a]atrim=0:{seg_dur},asetpts=PTS-STARTPTS[a{i}]")
-    # chain xfades
-    offset = seg_dur - dur
+    # Pre-filter each input: trim to its actual duration, reset PTS, force CFR
+    for i in range(n):
+        d = durations[i]
+        filters.append(f"[{i}:v]trim=0:{d},setpts=PTS-STARTPTS,fps={fps}[v{i}]")
+        filters.append(f"[{i}:a]atrim=0:{d},asetpts=PTS-STARTPTS[a{i}]")
+    # Chain xfades — offset = sum(d[0..i]) - (i+1)*dur
+    cum_dur = 0.0
     for i in range(n - 1):
-        vi, vj = f"v{i}", f"v{i+1}"
-        ai, aj = f"a{i}", f"a{i+1}"
-        if i == 0:
-            filters.append(f"[{vi}][{vj}]xfade=offset={offset}:duration={dur}:transition={transition}[vout{i}]")
-            filters.append(f"[{ai}][{aj}]acrossfade=d={dur}[aout{i}]")
-        else:
-            filters.append(f"[vout{i-1}][{vj}]xfade=offset={offset*(i+1)}:duration={dur}:transition={transition}[vout{i}]")
-            filters.append(f"[aout{i-1}][{aj}]acrossfade=d={dur}[aout{i}]")
+        cum_dur += durations[i]
+        offset = cum_dur - (i + 1) * dur
+        if offset < 0:
+            offset = 0
+        vi = f"v{i}" if i == 0 else f"vout{i-1}"
+        vj = f"v{i+1}"
+        ai = f"a{i}" if i == 0 else f"aout{i-1}"
+        aj = f"a{i+1}"
+        filters.append(f"[{vi}][{vj}]xfade=offset={offset}:duration={dur}:transition={transition}[vout{i}]")
+        filters.append(f"[{ai}][{aj}]acrossfade=d={dur}[aout{i}]")
     last = n - 2
     cmd = [_FFMPEG]
     for inp in inputs:
@@ -159,18 +190,21 @@ def resize(input: str, output: str, width: int = 0, height: int = 0) -> str:
 
 
 def silence_remove(input: str, output: str, threshold: float = -50,
-                   min_silence: float = 0.5, padding: float = 0.3) -> str:
-    """Remove silent sections.  Keeps `padding` seconds around speech."""
+                   min_silence: float = 0.5) -> str:
+    """Remove silent sections.  Re-encodes to maintain A/V sync.
+    FFmpeg 7.x removed leave_silence; we re-encode and accept 0 padding."""
     _check_ffmpeg()
     _ensure_parent(output)
     cmd = [_FFMPEG, "-i", input,
-           "-af", (f"silenceremove=start_periods=1:start_duration=1:"
-                   f"start_threshold={threshold}dB:"
-                   f"stop_periods=-1:stop_duration={min_silence}:"
-                   f"stop_threshold={threshold}dB:"
-                   f"leave_silence={padding},"
-                   f"afade=t=in:st=0:d=0.03"),
-           "-c:v", "copy", output]
+           "-filter_complex",
+           (f"[0:a]silenceremove=start_periods=1:start_duration=1:"
+            f"start_threshold={threshold}dB:"
+            f"stop_periods=-1:stop_duration={min_silence}:"
+            f"stop_threshold={threshold}dB,"
+            f"afade=t=in:st=0:d=0.03[a];"
+            f"[0:v]setpts=PTS-STARTPTS[v]"),
+           "-map", "[v]", "-map", "[a]",
+           "-c:v", "libx264", "-c:a", "aac", output]
     _run(cmd, check=True)
     return output
 
@@ -271,11 +305,11 @@ def loudnorm(input: str, output: str, target_lufs: float = -16.0) -> str:
     _check_ffmpeg()
     _ensure_parent(output)
 
-    # Pass 1 — measure
+    # Pass 1 — measure (non-greedy match, multi-block-safe on FFmpeg 7.x)
     res = _run([_FFMPEG, "-i", input,
                 "-af", f"loudnorm=I={target_lufs}:TP=-1.5:LRA=11:print_format=json",
                 "-f", "null", "-"])
-    match = re.search(r"\{.*\}", res.stderr, re.DOTALL)
+    match = re.search(r"\{[^{}]*\}", res.stderr, re.DOTALL)
     if not match:
         raise RuntimeError("could not parse loudnorm measurement")
     measured = json.loads(match.group())
