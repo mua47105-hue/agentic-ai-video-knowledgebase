@@ -29,9 +29,10 @@ updated: 2026-07-06
 - [video-use](entities/video-use) — Claude Code skill, transcript-first, self-evaluating
 - [Agentic Video Editor (AVE)](entities/agentic-video-editor) — CLI pipeline with retry gates, YAML-defined
 - [Pilipili-AutoVideo](entities/pilipili-autovideo) — Local end-to-end, Mem0 memory, CapCut export
-- ~~AI_Editor~~ *(not yet documented)*
-- ~~Magicroll AI Agent~~ *(not yet documented)*
-- ~~Google Project Montage~~ *(not yet documented)*
+- [AI_Editor](entities/ai-editor) — Full-stack pipeline, CV scene analysis, Shotstack rendering
+- [Magicroll AI Agent](entities/magicroll) — India-focused, vernacular support, proprietary engine
+- [Google Project Montage](entities/project-montage) — Google's multi-agent video builder (Gemini + Veo + Nano Banana)
+- [Nano Banana](entities/nano-banana) — Google image gen model, keyframe lock for consistent AI video characters
 
 ## Concepts
 
@@ -49,8 +50,9 @@ updated: 2026-07-06
 
 ## Comparisons
 
-*No comparisons yet.*
+- [AI Video Models 2026](comparisons/ai-video-models-2026) — Runway vs Pika vs Veo vs Kling vs Sora
+- [Agentic Frameworks 2026](comparisons/agentic-frameworks-2026) — 10 frameworks compared across architecture, capabilities, and maturity
 
 ## Charts
 
-*No charts yet.*
+- [Model Quality vs Speed vs Cost](charts/model-quality-speed-cost) — Bubble chart of AI video models

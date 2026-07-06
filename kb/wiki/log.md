@@ -34,4 +34,27 @@ Researched and documented 12 entities:
 - **Commercial tools**: EzVideo (private beta, Gemini director), Shorz (MCP-agent-callable)
 - **Remaining frameworks**: CutClaw (music-sync), video-use (transcript-first, 14.8k stars), AVE (CLI with retry gates), Pilipili-AutoVideo (local, Mem0, CapCut export)
 
-Running tally: 17 entities, 3 concepts, 0 sources, 0 guides, 0 comparisons, 0 charts.
+Running tally: 21 entities, 3 concepts, 0 sources, 0 guides, 0 comparisons, 0 charts.
+
+## [2026-07-06] chart | Model Quality vs Speed vs Cost
+
+Generated matplotlib bubble chart comparing 5 AI video models on quality, speed, and cost.
+
+## [2026-07-06] ingest | Deep Research Batch 4 — Comparisons + Chart
+
+Created:
+- **AI Video Models 2026** comparison — Runway vs Pika vs Veo vs Kling vs Sora
+- **Agentic Frameworks 2026** comparison — 10 frameworks across architecture, capabilities, maturity
+- **Model Quality vs Speed vs Cost** chart — matplotlib bubble chart
+
+Running tally: 21 entities, 3 concepts, 2 comparisons, 1 chart, 0 sources, 0 guides.
+
+## [2026-07-06] ingest | Deep Research Batch 3 — Remaining Frameworks + Nano Banana
+
+Researched and documented 4 more entities:
+- **AI_Editor** — full-stack pipeline with CV scene analysis + Shotstack
+- **Google Project Montage** — Google's multi-agent video builder
+- **Magicroll AI Agent** — India-focused vernacular platform
+- **Nano Banana** — keyframe lock for character consistency in AI video
+
+Running tally: 21 entities, 3 concepts, 0 sources, 0 guides, 0 comparisons, 0 charts.
