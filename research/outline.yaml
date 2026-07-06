@@ -49,7 +49,7 @@ items:
     category: Agentic Framework
     description: "Open-source Claude Code video editing skill. Cuts filler words, auto color grades, 30ms audio fades, generates animation overlays via Manim/Remotion, self-evaluates every cut. Transcript-first approach."
     sources:
-      - https://github.com/Alphalpha7/video-use
+      - https://github.com/browser-use/video-use
 
   - name: Agentic Video Editor (AVE)
     category: Agentic Framework

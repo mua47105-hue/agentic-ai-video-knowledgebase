@@ -44,5 +44,8 @@ ax.grid(True, alpha=0.3)
 ax.set_ylim(1050, 1280)
 
 plt.tight_layout()
-plt.savefig("/home/legendsbms/ai-video-editing-wiki/kb/wiki/charts/ai-video-models-2026.png", dpi=150)
-print("Chart saved to kb/wiki/charts/ai-video-models-2026.png")
+import pathlib
+out = pathlib.Path(__file__).resolve().parent.parent / "wiki" / "charts"
+out.mkdir(parents=True, exist_ok=True)
+plt.savefig(str(out / "ai-video-models-2026.png"), dpi=150)
+print(f"Chart saved to {out / 'ai-video-models-2026.png'}")
