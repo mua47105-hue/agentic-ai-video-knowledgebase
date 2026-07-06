@@ -1,0 +1,88 @@
+basic_info:
+  name:
+    description: Full name of the tool/framework
+    detail_level: brief
+  category:
+    description: Agentic Framework | Commercial Tool | AI Model
+    detail_level: brief
+  developer:
+    description: Company, organization, or individual developer(s)
+    detail_level: brief
+  release_date:
+    description: Initial release date (YYYY-MM or YYYY-MM-DD)
+    detail_level: brief
+  license:
+    description: Open-source license or proprietary pricing model
+    detail_level: brief
+
+technical_features:
+  architecture:
+    description: Core architecture (e.g. multi-agent, pipeline, skill-based, chat-driven)
+    detail_level: detailed
+  key_technologies:
+    description: Key technologies and frameworks used (e.g. Remotion, FFmpeg, Gemini, LLMs)
+    detail_level: detailed
+  input_format:
+    description: What the tool accepts (text prompt, footage folder, reference video, etc.)
+    detail_level: moderate
+  output_format:
+    description: What the tool produces (MP4, timeline, edit decision list, CapCut draft, etc.)
+    detail_level: moderate
+  max_video_length:
+    description: Maximum supported output video length
+    detail_level: moderate
+  supported_resolution:
+    description: Maximum output resolution
+    detail_level: moderate
+  api_access:
+    description: Whether the tool has an API for programmatic access
+    detail_level: moderate
+
+autonomy_level:
+  human_involvement:
+    description: How much human interaction is required (none, strategy approval, manual touch-up)
+    detail_level: detailed
+  self_evaluation:
+    description: Whether the tool evaluates its own output and retries
+    detail_level: moderate
+  planning_phase:
+    description: Whether the tool plans before executing (shot planning, script generation, etc.)
+    detail_level: moderate
+
+deployment:
+  deployment_type:
+    description: Local/self-hosted, cloud API, or desktop app
+    detail_level: moderate
+  hardware_requirements:
+    description: GPU/RAM requirements for local deployment
+    detail_level: moderate
+  setup_difficulty:
+    description: Easy / Moderate / Hard
+    detail_level: brief
+
+pricing:
+  pricing_model:
+    description: Free, subscription, credit-based, or one-time
+    detail_level: moderate
+  entry_price:
+    description: Starting price per month or per video
+    detail_level: moderate
+  free_tier:
+    description: Whether a free tier exists
+    detail_level: brief
+
+strengths:
+  description: Key strengths and best use cases
+  detail_level: detailed
+
+limitations:
+  description: Known limitations, weaknesses, and caveats
+  detail_level: detailed
+
+competitive_analysis:
+  key_differentiator:
+    description: What makes this tool unique compared to alternatives
+    detail_level: detailed
+  comparison_verdict:
+    description: Short verdict on who should use this and why
+    detail_level: moderate

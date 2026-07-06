@@ -1,0 +1,113 @@
+topic: AI Video Editing Agents
+description: "Autonomous AI agents that edit videos on behalf of a human — including open-source agentic frameworks, commercial tools, and the underlying models that power them."
+
+items:
+  # ── Agentic Frameworks (complete systems that autonomously edit video) ──
+  - name: VideoAgent
+    category: Agentic Framework
+    description: "All-in-one multi-agent framework from HKU integrating 30+ specialized editing agents with textual-gradient graph optimization for dynamic pipeline assembly. 87-95% success rate, 60% cost reduction."
+    sources:
+      - https://arxiv.org/html/2606.23327
+      - https://github.com/HKUDS/VideoAgent
+
+  - name: X-Cut
+    category: Agentic Framework
+    description: "Chat-driven AI video editing agent by MeiGen AI with real-time Remotion rendering. Skill-based architecture with dynamic skill selection. No timeline dragging — just chat."
+    sources:
+      - https://github.com/MeiGen-AI/X-Cut
+
+  - name: Crayotter
+    category: Agentic Framework
+    description: "Open-source multimodal multi-agent system for prompt-driven long-form video editing. Three-phase pipeline: material preparation → editing research → tool-grounded execution. Traceable artifacts for diagnosis. 3.40/5 human evaluation score."
+    sources:
+      - https://arxiv.org/abs/2606.07636
+      - https://github.com/idwts/Crayotter
+
+  - name: OpenMontage
+    category: Agentic Framework
+    description: "World's first open-source agentic video production system. 11 pipelines, 49 tools, 400+ agent skills. Agent-first architecture where the AI coding assistant IS the orchestrator. Real-footage documentary creation without video models."
+    sources:
+      - https://github.com/vitco/OpenMontage
+
+  - name: UniVA
+    category: Agentic Framework
+    description: "Universal Video Agent — open-source next-gen video generalist system. Plan Agent + Act Agent architecture. MCP-native, multi-round co-creation, deep memory and context. Supports local models."
+    sources:
+      - https://github.com/univa-agent/univa
+
+  - name: Google Project Montage
+    category: Agentic Framework
+    description: "Google's modular AI-powered video builder. Multi-agent framework powered by Gemini orchestration + Veo + Nano Banana. Transforms storyboard outline into production-quality video with transitions and music."
+    sources:
+      - https://github.com/google/project-montage
+
+  - name: CutClaw
+    category: Agentic Framework
+    description: "Agentic hours-long video editing via music synchronization. Multi-agent pipeline: screenwriter + editor + reviewer. Beat detection, smart auto-cropping. For long-form footage + music."
+
+  - name: video-use
+    category: Agentic Framework
+    description: "Open-source Claude Code video editing skill. Cuts filler words, auto color grades, 30ms audio fades, generates animation overlays via Manim/Remotion, self-evaluates every cut. Transcript-first approach."
+    sources:
+      - https://github.com/Alphalpha7/video-use
+
+  - name: Agentic Video Editor (AVE)
+    category: Agentic Framework
+    description: "Command-line AI video editor. Ensemble of agents: Director (selects shots) → Trim Refiner → Editor (FFmpeg) → Reviewer (scores output). YAML-defined pipelines with retry gates."
+    sources:
+      - https://github.com/jorgefsb/agentic-video-editor
+
+  - name: Pilipili-AutoVideo
+    category: Agentic Framework
+    description: "Fully local, end-to-end AI video agent. One sentence → script → keyframe images → TTS → video clips → FFmpeg assembly → MP4 with subtitles + CapCut draft. Mem0 memory for style learning."
+    sources:
+      - https://github.com/OpenDemon/Pilipili-AutoVideo
+
+  - name: AI_Editor
+    category: Agentic Framework
+    description: "AI-assisted video editing pipeline with scene analysis (EasyOCR, SceneDetect), Groq-powered edit planning, Shotstack cloud rendering, and YouTube publishing."
+    sources:
+      - https://github.com/carlamine/ai_editor
+
+  # ── Commercial Products ──
+  - name: EzVideo
+    category: Commercial Tool
+    description: "Autonomous AI video editing agent. Google Gemini as film director + Imagen for stills + Veo 3 for video + ElevenLabs for voiceover. Fully automated from prompt to MP4. Desktop app + B2B API."
+    sources:
+      - https://ezvideo.net/
+
+  - name: Shorz
+    category: Commercial Tool
+    description: "Desktop AI video editor that edits for you. Auto-clipping, B-roll, subtitles, zooms, transitions, music. Agent-callable via Cursor/Claude/Codex/Gemini. Credit-based pricing."
+    sources:
+      - https://www.shorz.ai/
+
+  - name: Magicroll AI Agent
+    category: Commercial Tool
+    description: "Autonomous AI Magic Agent. Describe scene in plain words → autonomous construction of cinematic video loops. 4K output, proprietary multimodal generative engine."
+
+  # ── AI Video Generation Models ──
+  - name: Runway Gen-4
+    category: AI Model
+    description: "The professional standard for AI video generation in 2026. Camera controls, motion brush, consistent output. Gen-4.5 adds native audio. The default recommendation for production workflows."
+
+  - name: Pika 2.5
+    category: AI Model
+    description: "Fastest AI video generator (8-15 sec per clip). Best for social media, viral effects, and high-volume experimentation. Best free tier. Lip-sync capability."
+
+  - name: Google Veo 3
+    category: AI Model
+    description: "Google's video generation model. Part of GCP ecosystem. Used in Project Montage and EzVideo. Strong for enterprise/cloud-native workflows."
+
+  - name: Sora
+    category: AI Model
+    description: "OpenAI's video generator. Being discontinued: web/app shut down April 2026, API September 2026. Best quality but no longer a viable workflow choice."
+
+  - name: Kling 3.0
+    category: AI Model
+    description: "Cinematic AI video generation alternative. Strong for professional storytelling. Accessible via Kuaishou."
+
+execution:
+  batch_size: 3
+  items_per_agent: 1
+  output_dir: ./results

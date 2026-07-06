@@ -4,14 +4,14 @@ type: overview
 created: 2026-07-06
 updated: 2026-07-06
 tags: [ai-video, overview]
-related: []
+related: [video-agent, crayotter, openmontage, univa, x-cut, multi-agent-orchestration, self-evaluation-loop, agentic-vs-generative]
 ---
 
 # AI Video Editing — Overview
 
 *This page is a living synthesis. It evolves as sources are ingested.*
 
-**Status: just getting started.** No sources have been ingested yet. The wiki is a blank slate.
+**Status: early but growing.** 5 agentic frameworks documented, 3 concept pages, 2 key concepts identified. The landscape splits into agentic frameworks (the editors) and generative models (the clip makers).
 
 ## What this wiki covers
 
