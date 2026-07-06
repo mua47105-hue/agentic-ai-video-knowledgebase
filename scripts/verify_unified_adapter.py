@@ -67,7 +67,7 @@ check("edit.j_cut works", 'ffmpeg_adapter' in ua.edit.j_cut.__module__)
 check("edit.hyperframes_init works", hasattr(ua.edit, 'hyperframes_init'))
 
 # 7. All __all__ symbols are callable or appropriate type
-non_callable = {'RENDER_PROFILES', 'mcp_available', 'edit'}
+non_callable = {'RENDER_PROFILES', 'mcp_available', 'edit', 'music'}
 for name in ua.__all__:
     if name in non_callable:
         continue

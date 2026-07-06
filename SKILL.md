@@ -50,6 +50,7 @@ These govern every edit. Violating any produces detectable quality loss.
 23. **Destructive operations require a prior snapshot.** `silence_remove`, `color_grade`, `loudnorm` — anything that re-encodes — must be preceded by `project_snapshot()`. The agent can always undo by reverting to the snapshot.
 24. **Audit trail is non-optional for broadcast delivery.** Every step logged with input hash, output hash, parameters, timestamp. BBC/Netflix compliance requires this.
 25. **Use unified_adapter, never direct mcp_video or raw ffmpeg_adapter.** `from kb.tools.unified_adapter import edit` combines mcp_video.Client (60+ capabilities) with audited ffmpeg_adapter functions. Direct `mcp_video.Client` usage bypasses the 4 known-buggy wrappers (merge, ai_remove_silence, pipeline, ai_transcribe). Direct `ffmpeg_adapter` usage is deprecated and will emit a warning.
+26. **Filter order matters: scale → color → overlay → subtitle.** FFmpeg filter chains are order-sensitive. Applying `scale` after `eq` gives wrong pixel values. Applying `subtitles` before `overlay` covers the overlay. The correct order is always: (1) resize/scale/crop, (2) color grade/curves/eq, (3) effects/blur/glitch, (4) overlays/PiP/grid, (5) subtitles LAST. Violating this order silently corrupts the visual output.
 
 ## The Decision Engine: PROBE → CLASSIFY → PLAN → BUILD → VERIFY
 
@@ -200,6 +201,36 @@ ffmpeg -i voice.mp4 -i music.mp3 -filter_complex \
 ffmpeg -i input.mp4 -af "acompressor=threshold=-18dB:ratio=4:attack=5:release=100" output.mp4
 ```
 
+#### Music Discovery & Analysis
+
+```python
+# Analyze any audio for BPM, key, mood, structure, genre
+# Full local analysis via librosa — no API calls
+from kb.tools.unified_adapter import music
+
+profile = music.describe("track.mp3")
+# Returns: {bpm, key, duration, sections, genre, mood, arousal, valence, suitability}
+check("BPM matches expectation", 80 < profile.get("bpm", 0) < 160)
+
+# Search royalty-free libraries (Pixabay, Incompetech, MusOpen)
+# Natural language query — "sad piano", "90s funk", "uplifting corporate"
+results = music.search(
+    "uplifting corporate",
+    bpm_range=(100, 130),
+    duration_min=60.0,
+    instrumental_only=True,
+)
+check("found candidates", len(results) > 0)
+
+# Download with automatic .license.json sidecar
+track = music.download(results[0], output_dir="./assets/music")
+print(f"Downloaded: {track['path']}")
+print(f"License: {track['license_path']}")
+
+# Describe before and after download — compare analysis with metadata
+# Ducking: music.lower_volume() when dialogue present (see Audio ducking above)
+```
+
 #### Color Grading
 
 ```python
@@ -325,6 +356,11 @@ If any gate fails, diagnose via the Error Recovery table below.
 | Output too large | No compression flags | Add `-crf 22 -c:a aac -b:a 128k` |
 | Speed change has no audio | atempo not applied | Always pair `setpts` with `atempo` |
 | Remotion/Hyperframes flicker | Unseeded random | Use platform's seeded random API |
+| Silence removal causes A/V desync | `ai_remove_silence` from mcp_video (11.62s drift) | Always use `edit.silence_remove()` from unified_adapter — uses silencedetect+trim+concat, not mcp_video |
+| Merge duration wrong for 3+ clips | mcp_video `merge` has incorrect offset math for n>2 | Always use `edit.merge()` from unified_adapter — our xfade chain has correct cum_dur offset |
+| Music analysis returns no BPM | Librosa or ffmpeg not installed, or file corrupted | Verify `pip install librosa` and `ffprobe` works on the file |
+| VMAF score < 80 after re-encode | Bitrate too low or preset too fast | Increase `-crf` (lower = better) or use `-preset slower`; re-run with `edit.quality_vmaf(ref, dist)` |
+| Velocity edit audio stutter | atempo not paired with setpts, or source fps too low | Always pair `edit.speed()` with both audio+video (HR #2); use 60fps source for 30-40% slow-mo |
 
 ## Workflow Templates
 
@@ -394,6 +430,33 @@ If any gate fails, diagnose via the Error Recovery table below.
    f. Vignette (subtle, PI/4 or less)
 4. VERIFY: Thumbnail at 3 points, check skin tones not clipped
 5. OUTPUT: Color-graded video
+```
+
+### Velocity Edit (Speed Ramping)
+
+```
+1. PROBE: Scene detect at 0.3 threshold + transcript for action moments
+2. CLASSIFY: content_type=vlog/music-video/social-short, target=tiktok/reels/youtube
+3. PLAN:
+   - Identify 2-4 peak moments per 60s of footage (high energy, punch points)
+   - Pre-roll: 0.5s at 50% speed (anticipation)
+   - Impact: 100% speed (full speed at the moment)
+   - Post-roll: 1.0s at 30-40% speed (slow-mo release)
+   - Audio: atempo chain matches speed changes, paired with setpts
+4. EXECUTE:
+   a. Extract each segment with handles (0.5s before, 1.5s after)
+   b. For each segment, apply speed curve:
+      - 0.0-0.5s: 50% speed (edit.speed(input, output, factor=0.5))
+      - 0.5-1.0s: 100% speed (edit.speed(input, trimmed, factor=1.0))
+      - 1.0-2.5s: 30-40% speed (edit.speed(input, output, factor=0.35))
+   c. Assemble with hard cuts (no transition — speed change is the transition)
+   d. Add whoosh SFX at each speed-up point (SFX leads visual by 1-2 frames, HR #3)
+   e. Two-pass loudnorm to -14 LUFS (social target)
+5. VERIFY:
+   - Frame-rate check: slow-mo segments should not stutter (60fps source ideal)
+   - Audio sync: atempo changes must match setpts (HR #2)
+   - Duration matches planned timing
+6. OUTPUT: Video with 2-4 velocity peaks, tight pacing
 ```
 
 ## Contradiction Log

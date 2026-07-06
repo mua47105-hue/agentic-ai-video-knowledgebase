@@ -182,6 +182,26 @@ from kb.tools.ffmpeg_adapter import (
 )
 
 # ═══════════════════════════════════════════════════════════════
+# Music adapter (audio analysis + royalty-free search/download)
+# ═══════════════════════════════════════════════════════════════
+
+import kb.tools.music_adapter as _music_adapter
+
+class _MusicModule(_types.ModuleType):
+    """Convenience module: music.describe(), music.search(), music.download()"""
+
+    def describe(self, audio_path: str, **kwargs) -> dict:
+        return _music_adapter.music_describe(audio_path, **kwargs)
+
+    def search(self, query: str, **kwargs) -> list[dict]:
+        return _music_adapter.music_search(query, **kwargs)
+
+    def download(self, track: dict, **kwargs) -> dict:
+        return _music_adapter.music_download(track, **kwargs)
+
+music = _MusicModule("music_adapter")
+
+# ═══════════════════════════════════════════════════════════════
 # Deprecation helpers — `from kb.tools.unified_adapter import edit`
 # ═══════════════════════════════════════════════════════════════
 
@@ -238,6 +258,8 @@ __all__ = [
     "project_create", "project_step", "project_resume", "project_snapshot", "project_audit_report",
     # Deprecated aliases
     "scene_detect", "pip",
+    # Music (adapter)
+    "music",
     # Convenience
     "edit", "mcp_available",
 ]
