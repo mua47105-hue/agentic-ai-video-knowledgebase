@@ -190,19 +190,63 @@ def resize(input: str, output: str, width: int = 0, height: int = 0) -> str:
 
 
 def silence_remove(input: str, output: str, threshold: float = -50,
-                   min_silence: float = 0.5) -> str:
-    """Remove silent sections.  Re-encodes to maintain A/V sync.
-    FFmpeg 7.x removed leave_silence; we re-encode and accept 0 padding."""
+                   min_silence: float = 0.5, padding: float = 0.3) -> str:
+    """Remove silent sections via silencedetect + trim+concat.
+    Maintains perfect A/V sync by trimming BOTH streams per keep-region.
+    padding seconds of breath/natural silence preserved at each cut."""
     _check_ffmpeg()
     _ensure_parent(output)
+    duration = _probe_duration(input)
+
+    # Pass 1 — detect silence regions
+    res = _run([_FFMPEG, "-i", input,
+                "-af", f"silencedetect=n={threshold}dB:d={min_silence}",
+                "-f", "null", "-"])
+    silence_starts = [float(m.group(1)) for m in
+                      re.finditer(r"silence_start: ([\d.]+)", res.stderr)]
+    silence_ends = [float(m.group(1)) for m in
+                    re.finditer(r"silence_end: ([\d.]+)", res.stderr)]
+    if not silence_starts:
+        cmd = [_FFMPEG, "-i", input, "-c", "copy", output]
+        _run(cmd, check=True)
+        return output
+
+    # Expand each silence by `padding` seconds, then merge overlaps
+    expanded: list[tuple[float, float]] = []
+    for ss, se in zip(silence_starts, silence_ends):
+        lo, hi = max(0.0, ss - padding), min(duration, se + padding)
+        if expanded and lo <= expanded[-1][1]:
+            expanded[-1] = (expanded[-1][0], max(expanded[-1][1], hi))
+        else:
+            expanded.append((lo, hi))
+
+    # Keep regions = gaps between merged expanded silences
+    regions: list[tuple[float, float]] = []
+    prev = 0.0
+    for lo, hi in expanded:
+        if lo > prev + 0.05:
+            regions.append((prev, lo))
+        prev = hi
+    if duration - prev > 0.05:
+        regions.append((prev, duration))
+    if not regions:
+        cmd = [_FFMPEG, "-i", input, "-c", "copy", output]
+        _run(cmd, check=True)
+        return output
+
+    # Pass 2 — trim each keep-region on both streams, concat
+    n = len(regions)
+    filters: list[str] = []
+    for i, (st, et) in enumerate(regions):
+        filters.append(f"[0:v]trim=start={st}:end={et},setpts=PTS-STARTPTS[v{i}]")
+        filters.append(f"[0:a]atrim=start={st}:end={et},asetpts=PTS-STARTPTS[a{i}]")
+    v_in = "".join(f"[v{i}]" for i in range(n))
+    a_in = "".join(f"[a{i}]" for i in range(n))
+    filters.append(f"{v_in}concat=n={n}:v=1:a=0[v]")
+    filters.append(f"{a_in}concat=n={n}:v=0:a=1[a]")
+
     cmd = [_FFMPEG, "-i", input,
-           "-filter_complex",
-           (f"[0:a]silenceremove=start_periods=1:start_duration=1:"
-            f"start_threshold={threshold}dB:"
-            f"stop_periods=-1:stop_duration={min_silence}:"
-            f"stop_threshold={threshold}dB,"
-            f"afade=t=in:st=0:d=0.03[a];"
-            f"[0:v]setpts=PTS-STARTPTS[v]"),
+           "-filter_complex", ";".join(filters),
            "-map", "[v]", "-map", "[a]",
            "-c:v", "libx264", "-c:a", "aac", output]
     _run(cmd, check=True)
