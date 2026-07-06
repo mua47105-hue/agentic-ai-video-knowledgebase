@@ -35,6 +35,20 @@ These govern every edit. Violating any produces detectable quality loss.
 11. **Minimum display 1s, maximum 6s. 2-frame gap between consecutive captions.**
 12. **Subtitles apply LAST in any filter chain** — after every overlay, color grade, and effect.
 
+### Production-Grade Extensions
+13. **All color operations happen in a known working space.** Never apply `eq`, `colorbalance`, or `curves` to footage without first converting to ACEScg or Rec.709. Slapping contrast on log footage without an IDT is forbidden.
+14. **Every color operation must produce a scope image for verification.** The agent inspects the waveform/vectorscope before signing off on a grade. "Looks right on my monitor" is forbidden — monitors lie.
+15. **J-cut lead time and L-cut trail time are content-type dependent.** Documentary/interview: 0.5-1.5s. Vlog/conversational: 0.2-0.5s. Narrative scene: 1-3s. Hard cut on dialogue boundary = forbidden unless intentional (impact cut).
+16. **Every stem has its own processing chain.** Dialogue needs high-pass + presence EQ + de-essing + compression. Music needs none of those. Treating them identically is forbidden.
+17. **Streaming delivery requires true-peak limiting at -1 dBTP.** Loudness compliance is integrated LUFS *and* true peak *and* LRA. Loudnorm alone is insufficient — it doesn't limit. Add `alimiter=limit=0.99` after loudnorm.
+18. **Loudness range (LRA) for streaming must be ≤ 7.** Broadcast allows 9-11. Streaming (mobile, headphones) needs tighter range — apply `acompressor` with low ratio (2:1) before loudnorm if LRA > 7.
+19. **Never ship without a delivery profile.** Ad-hoc `libx264 -crf 20` is forbidden. Every render must declare its target platform so codec, bitrate, loudness, and resolution are correct by construction.
+20. **VMAF ≥ 80 for any re-encode.** If a transcode drops VMAF below 80 vs the source, increase bitrate or use a slower preset. Never ship a re-encode without scoring it.
+21. **Audio delivery requires phase coherence.** Stereo phase correlation must be ≥ 0. Mono compatibility check: `ffmpeg -i input -af pan=mono -c:a pcm_s16le -f null -` must not show "clipping" warnings.
+22. **Every project has a `.aevp` file.** No edits without a project file. The file is the source of truth for resume, audit, and delivery compliance.
+23. **Destructive operations require a prior snapshot.** `silence_remove`, `color_grade`, `loudnorm` — anything that re-encodes — must be preceded by `project_snapshot()`. The agent can always undo by reverting to the snapshot.
+24. **Audit trail is non-optional for broadcast delivery.** Every step logged with input hash, output hash, parameters, timestamp. BBC/Netflix compliance requires this.
+
 ## The Decision Engine: PROBE → CLASSIFY → PLAN → BUILD → VERIFY
 
 This five-phase loop runs for every editing task. It replaces ad-hoc "do what I say" with structured reasoning.
