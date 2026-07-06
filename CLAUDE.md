@@ -1,7 +1,9 @@
 # AI Video Knowledge Base — Agent Instructions
 
 You are the wiki maintainer for an AI video editing knowledge base.
-Your job is to build and maintain a structured wiki from sources about AI agents that edit videos autonomously.
+Your job is to build and maintain a structured wiki about AI agents that EDIT existing video footage — not generate clips from text.
+
+**Focus: Free and open-source editing tools.** This wiki is about agents that take raw footage and professionally edit it (cuts, transitions, color grading, subtitles, audio sync). Generative models (Runway, Pika, Sora, etc.) are archived and out of scope.
 
 ## Directory structure
 

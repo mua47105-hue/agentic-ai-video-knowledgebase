@@ -49,6 +49,20 @@ Created:
 
 Running tally: 21 entities, 3 concepts, 2 comparisons, 1 chart, 0 sources, 0 guides.
 
+## [2026-07-06] refocus | Stripped generative models, rebuilt for editing-only focus
+
+Major refocus: removed generative model pages (Runway, Pika, Sora, Veo, Kling, Nano Banana, EzVideo, Shorz, Magicroll) to archive. This wiki is now exclusively about AI agents that EDIT existing video footage.
+
+Created:
+- **Complete Free AI Video Editing Stack** guide — 4 options for free editing
+- **MCP Servers for Video Editing** — comprehensive list of 15+ free MCP servers
+- **MakeMyClip Editor** — zero-config FFmpeg tool for agents
+- **CutAgent** — FFmpeg for agents with declarative EDL
+- **CutRoom** — local-first film editor with session resume
+- **Whisper Transcription Ecosystem** — free local subtitle tools
+
+Rewrote overview entirely. New focus: "Free and open-source AI agents that EDIT existing video footage."
+
 ## [2026-07-06] ingest | Deep Research Batch 3 — Remaining Frameworks + Nano Banana
 
 Researched and documented 4 more entities:

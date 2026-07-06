@@ -3,36 +3,70 @@ title: AI Video Editing — Overview
 type: overview
 created: 2026-07-06
 updated: 2026-07-06
-tags: [ai-video, overview]
-related: [video-agent, crayotter, openmontage, univa, x-cut, multi-agent-orchestration, self-evaluation-loop, agentic-vs-generative]
+tags: [ai-video, overview, editing, free]
+related: [free-ai-video-editing-stack, mcp-video-servers, make-my-clip, cutagent, video-use]
 ---
 
 # AI Video Editing — Overview
 
 *This page is a living synthesis. It evolves as sources are ingested.*
 
-**Status: well underway.** 17 entities, 3 concepts documented. The landscape splits into agentic frameworks (the editors) and generative models (the clip makers). Sora is being discontinued (April/Sept 2026). The market is now a three-horse race between Runway Gen-4.5 (production control), Google Veo 3.1 (narrative/audio), and Kling 3.0 (native 4K value).
+**Focus: Free and open-source AI agents that EDIT existing video footage.** This wiki is NOT about AI video generation (Runway, Pika, Sora, Veo, etc.). It is about AI agents that take your raw footage and professionally edit it — cuts, transitions, color grading, subtitles, audio sync, pacing, and assembly.
 
-## What this wiki covers
+## The core insight
 
-AI agents that can edit videos autonomously on behalf of a human editor. This includes:
+You can edit videos with AI agents using a **completely free, local stack**:
 
-- **Text-to-video generation** models that create clips from prompts
-- **AI video editing tools** that automate cuts, transitions, effects
-- **Agentic workflows** where AI decides *when* and *how* to edit
-- **Pipeline automation** — connecting AI tools into end-to-end editing workflows
-- **Comparisons** of tools, models, and approaches
+```
+Your footage → AI Agent (via MCP) → FFmpeg → Edited video
+                                  → Whisper → Subtitles
+                                  → melt → Professional timeline
+```
 
-## The goal
+The agent understands your intent, calls the right tools, and produces the finished edit. All the tools are free and open-source. The only variable is which LLM you use — local models (Ollama) are free, cloud models give better results.
 
-Build a comprehensive, up-to-date knowledge base that lets an AI agent (or a human) understand the landscape of AI video editing — what tools exist, how they work, how they compare, and how to chain them into real editing pipelines.
+## How it works
+
+1. **Agent understands** what you want (natural language)
+2. **Agent calls tools** via MCP servers (trim, cut, merge, subtitle, color grade)
+3. **FFmpeg executes** the operations (free, battle-tested, runs everything)
+4. **Agent reviews** the output and iterates
+
+## What's possible today (for free)
+
+- Trim and cut footage based on transcript content
+- Auto-generate and burn subtitles
+- Remove silences and filler words
+- Merge clips with transitions
+- Color grading and effects
+- Scene detection and shot selection
+- Audio sync and leveling
+- Professional multi-track editing (via Kdenlive headless)
+
+## Current wiki contents
+
+- **Editing tools**: video-use, MakeMyClip, CutAgent, CutRoom, OpenMontage, AVE, AI_Editor, Crayotter
+- **MCP ecosystem**: 15+ free MCP servers for FFmpeg operations
+- **Transcription**: Whisper ecosystem (whisper.cpp, faster-whisper, WhisperX)
+- **Guides**: Complete free stack setup, how to configure MCP servers
+- **Frameworks**: VideoAgent, OpenMontage, Crayotter, UniVA
 
 ## Key questions
 
-These will be answered as the wiki grows:
+1. What free tools can I use TODAY to edit videos with an AI agent?
+2. How do I set up the complete stack (MCP + Whisper + FFmpeg)?
+3. What can local LLMs handle vs. when do I need cloud LLMs?
+4. What MCP server gives me the most editing capabilities?
+5. How do professional NLEs (Kdenlive, Shotcut) fit into an agentic workflow?
 
-1. What tools can generate video from text/prompts?
-2. What tools can edit existing video (cuts, transitions, effects) autonomously?
-3. How do you chain multiple AI tools into a coherent editing pipeline?
-4. What are the current limitations — quality, consistency, length, control?
-5. What does a "set it and forget it" AI video editing workflow look like today?
+## Quick start
+
+```bash
+# Install the core stack
+pip install mcp-video
+pip install faster-whisper
+brew install ffmpeg
+
+# Configure your AI agent to use mcp-video
+# Then say: "Edit this video. Remove pauses, add subtitles, and color grade it."
+```
