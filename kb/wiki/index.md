@@ -58,7 +58,9 @@ updated: 2026-07-06
 
 ## Skills
 
-- [SKILL.md](../../SKILL.md) — Complete agent skill for AI video editing (root level, auto-discoverable)
+- [SKILL.md](../../SKILL.md) — Complete agent skill for AI video editing (root level, auto-discoverable). 5-phase decision engine, 12 Hard Rules, production techniques, MCP tool mappings, error recovery, contradiction log.
+- [Agent Prompt](../../scripts/agent-prompt.md) — Universal copy-paste prompt for any LLM agent. CLASSIFY → PROBE → PLAN → BUILD → VERIFY workflow.
+- [Setup Script](../../scripts/setup.sh) — One-command install: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash`
 
 ## Charts
 

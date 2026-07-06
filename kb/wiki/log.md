@@ -92,3 +92,21 @@ Created guide for fully local, free LLM setup. Covers: Qwen2.5-Coder (88% FFmpeg
 ## [2026-07-06] guide | Build Your Own AI Video Editor — 5-Level Blueprint
 
 Created step-by-step blueprint from MVP (5 mins) to fully autonomous (1 month). Each level has exact steps, MCP config, capabilities, and estimated build time. Includes: architecture diagram, decision flowchart, agent prompt template, full installation script, verification checklist. Four levels: MVP → Workstation → Autonomous → Professional → Fully Autonomous.
+
+## [2026-07-06] merge | SKILL.md — Integrated production techniques from video-use/editing-craft
+
+Major SKILL.md rewrite: merged editing-craft's 12 Hard Rules (two-pass loudnorm, xfade offset validation, subtitle readability rules, SFX timing) with our agent-first MCP workflow. Added 5-phase decision engine (CLASSIFY → PROBE → PLAN → BUILD → VERIFY), content-type routing table (8 content types with unique workflows), production technique library mapped to MCP tools, error recovery table with 12 specific failure patterns, contradiction log, project memory pattern. SKILL.md is now the definitive single-file agent skill for video editing.
+
+## [2026-07-06] scripts | One-command setup + universal agent prompt
+
+Created `scripts/setup.sh` — installs FFmpeg, mcp-video, faster-whisper, Whisper MCP server, CutAgent, optional Ollama + Qwen2.5-Coder 7B. Single curl command: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash`
+
+Created `scripts/agent-prompt.md` — definitive copy-paste system prompt for any LLM agent. CLASSIFY → PROBE → PLAN → BUILD → VERIFY workflow with all Hard Rules and production techniques.
+
+## [2026-07-06] enhance | FFmpeg reference — production-grade commands
+
+Updated FFmpeg reference with: two-pass loudnorm (measurement + linear apply, explicit -ar 48000), xfade offset validation (pre-render bound check), cubic-ease easing for transitions, -50dB silence threshold (from -30dB), 0.3s silence removal padding with 0.03s audio fades, transition SFX integration.
+
+## [2026-07-06] enhance | Blueprint — production gates + content-type routing
+
+Updated blueprint with: content-type routing table (8 content types), production correctness checklist (10 items beyond tool check), contradiction log (6 disagreements surfaced to user), enhanced decision flowchart with CLASSIFY and VERIFY phases.

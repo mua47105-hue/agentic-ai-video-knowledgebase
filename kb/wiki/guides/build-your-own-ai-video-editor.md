@@ -278,54 +278,80 @@ VideoAgent framework (HKU) — 30+ specialized agents, DAG orchestration
 User says: "Edit this video"
                 │
                 ▼
-        ┌─────────────────┐
-        │ PROBE the video  │
-        │ (ffprobe +       │
-        │  whisper)        │
-        └────────┬────────┘
-                 │
-                 ▼
-        ┌─────────────────┐
-        │ Can I handle    │──── No ──► Suggest cloud LLM / human
-        │ this with MCP?  │
-        └────────┬────────┘
-                 │ Yes
-                 ▼
-        ┌─────────────────┐
-        │ Need more than  │
-        │ simple trim?    │──── No ──► Single MCP tool call
-        └────────┬────────┘
-                 │ Yes
-                 ▼
-        ┌─────────────────┐
-        │ Write edit plan  │
-        │ (ordered steps)  │
-        └────────┬────────┘
-                 │
-                 ▼
-        ┌─────────────────────────┐
-        │ Execute step by step    │
-        │ Verify each step before │
-        │ moving to next          │
-        └────────┬────────────────┘
-                 │
-                 ▼
-        ┌─────────────────┐
-        │ All steps pass? │──── No ──► Diagnose → Fix → Retry (max 3)
-        └────────┬────────┘
-                 │ Yes
-                 ▼
-        ┌─────────────────┐
-        │ Final quality    │
-        │ check            │
-        └────────┬────────┘
-                 │
-                 ▼
-        ┌─────────────────┐
-        │ Report: what was │
-        │ done, duration,  │
-        │ output path      │
-        └─────────────────┘
+        ┌──────────────────────────────┐
+        │ 0. CLASSIFY                  │
+        │   content_type?              │
+        │   complexity?                │
+        │   target_platform?           │
+        │   output_lufs? (-16/-14/-23) │
+        └──────────────┬───────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────────┐
+        │ 1. PROBE                         │
+        │   video_info_detailed()          │
+        │   whisper transcribe             │
+        │   scene detection                │
+        │   → Source Profile               │
+        └──────────────┬───────────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────────┐
+        │ Can I handle this with MCP?      │──── No ──► Route to:
+        │ (check tool coverage)            │              raw FFmpeg → NLE → human
+        └──────────────┬───────────────────┘
+                       │ Yes
+                       ▼
+        ┌──────────────────────────────────┐
+        │ Need multi-step plan?            │──── No ──► Single MCP tool call
+        │ (>1 operation)                   │              ↓
+        └──────────────┬───────────────────┘           verify & done
+                       │ Yes
+                       ▼
+        ┌──────────────────────────────────┐
+        │ 2. PLAN                          │
+        │   Ordered operations with exact  │
+        │   tool/param per step            │
+        │   Quality gates per step         │
+        │   Expected output metrics        │
+        └──────────────┬───────────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────────────────┐
+        │ 3. BUILD (step by step)                   │
+        │   For EACH step:                          │
+        │     Call tool → check output → gate pass? │
+        │                                          │
+        │   Production rules:                       │
+        │   • Two-pass loudnorm ONLY                │
+        │   • atempo + setpts paired                │
+        │   • Xfade offset validated                │
+        │   • Subtitles applied LAST                │
+        │   • SFX lead visual by 1-2 frames         │
+        └──────────────┬───────────────────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────────┐
+        │ All steps pass?                  │──── No ──► Diagnose via Error Table
+        │                                  │              ↓
+        │ Quality gates:                   │         Fix → Retry (max 3)
+        │ • Output exists                  │         Still fail? → Explain to user
+        │ • Duration matches ±5%           │
+        │ • Audio + video streams present  │
+        │ • A/V sync within 0.5s          │
+        │ • LUFS in target range           │
+        │ • Thumbnails look correct        │
+        └──────────────┬───────────────────┘
+                       │ All pass
+                       ▼
+        ┌──────────────────────────────────┐
+        │ 4. REPORT                        │
+        │   What was done                  │
+        │   Output path + duration         │
+        │   Gates passed                   │
+        │   Issues + resolutions           │
+        │   Save project.json for resume   │
+        └──────────────────────────────────┘
 ```
 
 ## MCP Server Selection Guide
@@ -413,8 +439,7 @@ echo "Then try: 'Trim this video from 30s to 1m30s'"
 
 ## Verification Checklist
 
-After setup, verify each capability:
-
+### Tool Check
 - [ ] Agent can probe video: `video_info_detailed`
 - [ ] Agent can trim: `video_trim`
 - [ ] Agent can merge: `video_merge`
@@ -427,3 +452,27 @@ After setup, verify each capability:
 - [ ] Agent can stabilize: `video_stabilize`
 - [ ] Agent can apply effects: `video_effect_*`
 - [ ] Agent can create layouts: `video_layout_*`
+
+### Production Correctness Check
+- [ ] Agent performs two-pass loudnorm (not single-pass)
+- [ ] Agent pairs atempo + setpts for speed changes
+- [ ] Agent validates xfade offset before rendering
+- [ ] Agent applies subtitles LAST in filter chain
+- [ ] Agent respects 2-line, 37-42 char subtitle limit
+- [ ] Agent leaves 2-frame gap between captions
+- [ ] Agent uses -50dB for silence detection (not -30dB)
+- [ ] Agent leaves 0.3s padding on silence removal (not 0)
+- [ ] Agent uses 0.03s audio fades at silence cut points
+- [ ] Agent adds SFX for whip/glitch/zoom transitions
+
+## Contradiction Log
+
+Sources disagree on some parameters. The agent should surface these instead of silently picking one:
+
+| Topic | Position A | Position B | Default |
+|-------|-----------|-----------|---------|
+| J/L-cut offset | 5-15 frames (tech/doc) | 1-2 seconds (vlog) | Pick by content type |
+| Loudness target | -14 LUFS (streaming) | -16 LUFS (talking-head) | -16 for dialogue, -14 for social |
+| Silence threshold | -30dB (light) | -50dB (aggressive) | -50dB with 0.3s padding |
+| Subtitle line length | 37 chars (BBC) | 42 chars (Netflix) | 42 chars |
+| Transition SFX | Always required | Optional | Always required |

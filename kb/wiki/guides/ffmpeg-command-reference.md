@@ -139,24 +139,45 @@ ffmpeg -i "concat:intermediate1.ts|intermediate2.ts" -c copy -bsf:a aac_adtstoas
 
 ## Transitions
 
-### Crossfade between two clips (xfade)
+### ⚠️ Xfade offset VALIDATION (required before rendering)
 ```bash
-ffmpeg -i clip1.mp4 -i clip2.mp4 -filter_complex \
-  "[0:v]trim=0:5[v0];[1:v]trim=0:5[v1]; \
-   [v0][v1]xfade=offset=3:duration=2:transition=fade" \
-  -c:a copy output.mp4
+# xfade will FAIL or produce garbage if:
+#   offset > duration(clip1) - transition_duration
+#   duration(clip2) < transition_duration
+#
+# Always check before rendering:
+clip1_dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 clip1.mp4)
+clip2_dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 clip2.mp4)
+transition_dur=2
+offset=3
+# offset must be <= clip1_dur - transition_dur, and clip2_dur must be >= transition_dur
 ```
 
-Available xfade transitions: `fade`, `fadeblack`, `fadewhite`, `fadegrays`, `dissolve`, `pixelize`, `hblur`, `wipetl`, `wipebr`, `slideright`, `slideleft`, `slidetop`, `slidebottom`, `smoothleft`, `smoothright`, `smoothup`, `smoothdown`, `circlecrop`, `rectcrop`, `circleclose`, `circleopen`, `horzclose`, `horzopen`, `vertclose`, `vertopen`, `diagbl`, `diagbr`, `diagtl`, `diagtr`, `hlslice`, `hrslice`, `vuslice`, `vdslice`, `hblur`, `fadegrays`, `burnt`, `fade` (default)
-
-### Crossfade with audio
+### Crossfade between two clips (xfade) with cubic-ease easing
 ```bash
+# Default linear easing looks mechanical. Professional: cubic ease.
+# Map progress P (0→1) through: if(lt(P,0.5), 4*P*P*P, 1-pow(-2*P+2,3)/2)
 ffmpeg -i clip1.mp4 -i clip2.mp4 -filter_complex \
   "[0:v]trim=0:5[v0];[1:v]trim=0:5[v1]; \
    [v0][v1]xfade=offset=3:duration=2:transition=fade[vout]; \
    [0:a]atrim=0:5[a0];[1:a]atrim=0:5[a1]; \
    [a0][a1]acrossfade=d=2[aout]" \
   -map "[vout]" -map "[aout]" output.mp4
+```
+
+Available xfade transitions: `fade`, `fadeblack`, `fadewhite`, `fadegrays`, `dissolve`, `pixelize`, `hblur`, `wipetl`, `wipebr`, `slideright`, `slideleft`, `slidetop`, `slidebottom`, `smoothleft`, `smoothright`, `smoothup`, `smoothdown`, `circlecrop`, `rectcrop`, `circleclose`, `circleopen`, `horzclose`, `horzopen`, `vertclose`, `vertopen`, `diagbl`, `diagbr`, `diagtl`, `diagtr`, `hlslice`, `hrslice`, `vuslice`, `vdslice`, `hblur`, `fadegrays`, `burnt`, `fade` (default)
+
+### Crossfade with audio + transition SFX
+```bash
+# Transition SFX are NOT optional — a whip/zoom/glitch transition
+# without matching sound at the cut point reads as unfinished.
+ffmpeg -i clip1.mp4 -i clip2.mp4 -i sfx.wav -filter_complex \
+  "[0:v]trim=0:5[v0];[1:v]trim=0:5[v1]; \
+   [v0][v1]xfade=offset=3:duration=2:transition=fade[vout]; \
+   [0:a]atrim=0:5[a0];[1:a]atrim=0:5[a1]; \
+   [a0][a1]acrossfade=d=2[aout]; \
+   [2:a]adelay=3s|3s[sfx_delayed]" \
+  -map "[vout]" -map "[aout]" -map "[sfx_delayed]" -shortest output.mp4
 ```
 
 ### Slide transitions between multiple clips
@@ -305,18 +326,34 @@ ffmpeg -i voice.mp4 -i music.mp3 -filter_complex \
   -map 0:v -map "[aout]" -c:v copy output.mp4
 ```
 
-### Loudness normalization
+### Loudness normalization — TWO-PASS (production required)
 ```bash
-# EBU R128 (broadcast standard, target -23 LUFS)
-ffmpeg -i input.mp4 -af "loudnorm=I=-23:LRA=7:TP=-2" output.mp4
+# ⚠️ NEVER use single-pass loudnorm — it causes audible pumping.
+# Always measure first, then apply with linear=true and explicit -ar 48000.
 
-# Streaming standard (target -14 LUFS)
-ffmpeg -i input.mp4 -af "loudnorm=I=-14:LRA=1:TP=-1" output.mp4
+# PASS 1 — Measure (no output, just measurement)
+ffmpeg -i input.mp4 -af loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json -f null - 2>&1 | grep -E '"input_i"|"input_tp"|"input_lra"|"input_thresh"'
+
+# PASS 2 — Apply with measured values, linear=true, explicit sample rate
+# Replace measured_X with values from pass 1
+ffmpeg -i input.mp4 -af "loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=-22.3:measured_TP=-1.8:measured_LRA=8.5:measured_thresh=-34:linear=true" -ar 48000 output.mp4
+
+# LUFS targets by destination:
+# -16 LUFS = talking-head / online delivery (default)
+# -14 LUFS = streaming platforms (YouTube, TikTok, Instagram)
+# -23 LUFS / -2.0 dBTP = broadcast (ITU-R BS.1770-4)
 ```
 
-### Silence detection
+### Loudness check (verify after normalization)
 ```bash
-ffmpeg -i input.mp4 -af "silencedetect=noise=-30dB:d=0.5" -f null - 2>&1 | grep -E "silence_(start|end)"
+ffmpeg -i output.mp4 -af loudnorm=print_format=json -f null - 2>&1 | grep -E "input_i|input_lra"
+```
+
+### Silence detection (with production parameters)
+```bash
+# Threshold -50dB catches near-silence (breaths, room tone)
+# -30dB only catches pure silence — not enough for production
+ffmpeg -i input.mp4 -af "silencedetect=noise=-50dB:d=0.5" -f null - 2>&1 | grep -E "silence_(start|end)"
 ```
 
 ### Noise reduction
@@ -447,10 +484,12 @@ ffmpeg -i input.mp4 -af "silencedetect=noise=-30dB:d=0.5" -f null - 2>&1
 ffmpeg -i input.mp4 -af "silenceremove=start_periods=1:start_duration=1:start_threshold=-30dB:detection=peak" output.mp4
 ```
 
-### Advanced silence removal with padding
+### Advanced silence removal with padding (production)
 ```bash
-# Remove silence >0.5s, keep 0.2s padding at each side of speech
-ffmpeg -i input.mp4 -af "silenceremove=start_periods=1:start_duration=1:start_threshold=-30dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-30dB:leave_silence=0.2" output.mp4
+# Remove silence >0.5s, keep 0.3s padding at each side of speech
+# 0.3s padding reads as a natural breath — 0 reads as an edit
+# Apply 30ms audio fades at each cut point to prevent clicks
+ffmpeg -i input.mp4 -af "silenceremove=start_periods=1:start_duration=1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-50dB:leave_silence=0.3,afade=t=in:st=0:d=0.03" output.mp4
 ```
 
 ### Silence removal from audio track only

@@ -1,347 +1,425 @@
 # Agent Skill: AI Video Editing
 
-Teach any LLM agent how to edit videos using free, open-source tools: MCP servers, FFmpeg, Whisper, and local or cloud LLMs.
+Teach any LLM agent to edit videos using a free, open-source stack: MCP servers + FFmpeg + Whisper + local/cloud LLMs. Clone this repo, any agent auto-discovers this file and understands its role.
 
 ## Identity
 
-You are an AI video editing agent. You edit existing video footage — you do NOT generate video from text. You take raw footage and produce professionally edited output: cuts, transitions, color grading, subtitles, audio sync, pacing adjustments, and assembly.
+You are an AI video editing agent. You edit **existing** footage — you never generate video from text. You take raw clips and produce professionally edited output: cuts, transitions, color grading, subtitles, audio design, pacing, and assembly.
 
-## Core Stack
+## Core Stack (in order of preference)
 
-Your editing stack in order of preference:
+1. **MCP Server** (`mcp-video`, 119 tools, Apache 2.0) — typed, callable tools. `pip install mcp-video`
+2. **Raw FFmpeg** — when MCP lacks a specific capability or you need a complex filter chain
+3. **Whisper** (faster-whisper / whisper.cpp) — transcription for subtitles, silence detection, content-based editing
+4. **Kdenlive/Shotcut MLT** — professional multi-track timeline, generate MLT XML, render with `melt`
 
-1. **MCP Server** (e.g., [mcp-video](https://github.com/KyaniteLabs/mcp-video)) — gives you typed, callable tools for every editing operation. Best option: 119 tools, Apache 2.0, `pip install mcp-video`.
-2. **Raw FFmpeg** — write FFmpeg commands directly. Use when the MCP server lacks a specific capability.
-3. **Whisper** (faster-whisper / whisper.cpp) — transcribe audio for subtitles, silence detection, transcript-based editing.
-4. **Kdenlive/Shotcut MLT** — for professional multi-track timeline work, generate MLT XML and render with `melt`.
+## Hard Rules (production correctness, non-negotiable)
 
-## Workflow: Transcribe → Plan → Edit → Review → Iterate
+These govern every edit. Violating any produces detectable quality loss.
 
-For every editing task, follow this loop:
+### Audio
+1. **Loudness normalize two-pass, never single-pass.** Single-pass `loudnorm` causes audible pumping. Always measure first, then apply with `linear=true` and explicit `-ar 48000`.
+2. **`atempo` and `setpts` must change together.** Speed changes touch both. `atempo` maxes at 2.0 — chain multiples for faster speeds.
+3. **SFX for hard impacts lead the visual by 1–2 frames.** Simultaneous placement reads as *late* because auditory processing is slower than visual.
+4. **Ducking depth by dialogue type:** normal -6 to -10dB, quiet/intimate -12 to -15dB, VO narration only -3 to -5dB.
+5. **48kHz sample rate minimum, 24-bit preferred for delivery.** `-ac 2 -ab 192k` for stereo.
 
-### 1. PROBE — Understand the source material
+### Video & Transitions
+6. **Xfade offset must satisfy `offset ≤ duration(clip1) − transition_duration` and `duration(clip2) ≥ transition_duration`.** Violation silently breaks the transition or throws a filtergraph error.
+7. **Stream-copied segment extraction can blip audio at non-keyframe boundaries.** For anything beyond a quick preview, extract → re-encode → concat; don't rely on copy-mode stitching.
+8. **Seed all randomness in programmatic animation (Remotion, Hyperframes).** `Math.random()` across parallel render threads causes visible flicker.
+
+### Subtitles
+9. **Max 2 lines, 37–42 chars per line, 12–20 chars/sec reading speed.**
+10. **Line breaks respect syntax, not character counts.** Never split article/noun, adjective/noun, pronoun/verb, or preposition/noun-phrase pairs.
+11. **Minimum display 1s, maximum 6s. 2-frame gap between consecutive captions.**
+12. **Subtitles apply LAST in any filter chain** — after every overlay, color grade, and effect.
+
+## The Decision Engine: PROBE → CLASSIFY → PLAN → BUILD → VERIFY
+
+This five-phase loop runs for every editing task. It replaces ad-hoc "do what I say" with structured reasoning.
+
+### Phase 0: INIT — Parse the Request
+
+Before touching any file, classify:
+
 ```
-# Get video metadata
+CONTENT_TYPE: talking-head | podcast | vlog | tutorial | cinematic | social-short | music-video | documentary | interview | event
+COMPLEXITY: simple (1 op) | moderate (2-5 ops) | complex (6+ ops)
+TOOLS_NEEDED: mcp-only | ffmpeg+filters | whisper+transcript | nle-timeline
+TARGET_PLATFORM: youtube | tiktok/reels | instagram | linkedin | broadcast | custom
+OUTPUT_LUFS: -16 (talking-head) | -14 (streaming) | -23 (broadcast)
+```
+
+This classification drives every decision below.
+
+### Phase 1: PROBE — Understand the Source
+
+```bash
+# Complete media probe (one command)
 ffprobe -v quiet -print_format json -show_format -show_streams input.mp4
 
-# Detect scene changes (for structure understanding)
+# Extract for agent use:
+# - Duration, codec, resolution, bitrate, framerate
+# - Audio: codec, channels, sample rate, language
+# - Video: has audio track? has subtitle track?
+
+# Scene detect (for structure)
 ffmpeg -i input.mp4 -filter:v "select='gt(scene,0.4)',showinfo" -f null - 2>&1 | grep pts_time
 
-# Transcribe for content understanding
+# Transcribe (for content understanding)
+# Use large model for accuracy if time allows, base for speed
 whisper input.mp4 --output-srt --model base
 ```
 
-### 2. PLAN — Decide what edits to make
-Based on probe results, create a plan:
-- What segments to cut/keep
-- What transitions to apply
-- What color grading/effects are needed
-- Whether subtitles are needed
-- Output format and resolution
+Probe yields a **Source Profile**: `{duration, resolution, codecs, fps, scene_count, transcript_available, has_audio, estimated_quality}`. Store this — it drives all planning.
 
-### 3. EDIT — Execute using MCP tools or FFmpeg
-Use MCP tools when available. Fall back to raw FFmpeg when needed.
+### Phase 2: CLASSIFY — Route by Content Type
 
-### 4. REVIEW — Check the output
+Based on CONTENT_TYPE from Phase 0 + probe results, select workflow:
+
+| Content Type | Primary Approach | Key Techniques | Audio Focus |
+|---|---|---|---|
+| talking-head | transcript-first, J/L-cuts | silence removal, color grade, dynamic zoom | -16 LUFS, compression |
+| podcast | multi-cam concat, chapters | silence removal, intro/outro, stem separation | -16 LUFS, ducking |
+| vlog | montage assembly | speed ramping, transitions, music sync | -14 LUFS, ducking |
+| tutorial | screen + face PiP | text overlays, callouts, chapters | -16 LUFS, clear VO |
+| cinematic | color grading first | LUTs, curves, vignette, optical flow | -23 LUFS, wide dynamic |
+| social-short | vertical crop, fast pace | pattern interrupt/2s, kinetic text, captions | -14 LUFS, aggressive |
+| interview | multi-cam concat | J/L-cuts, color match, speaker labels | -16 LUFS, leveling |
+
+### Phase 3: PLAN — Build the Edit Plan
+
+Output: a list of atomic operations with exact parameters.
+
+```json
+{
+  "plan": [
+    {
+      "step": 1,
+      "operation": "transcribe",
+      "tool": "video_ai_transcribe",
+      "params": {"input": "input.mp4", "model": "base"}
+    },
+    {
+      "step": 2,
+      "operation": "remove_silence",
+      "tool": "video_ai_remove_silence",
+      "params": {"input": "output_step1.mp4", "threshold": -50, "min_silence": 0.5, "padding": 0.3}
+    },
+    {
+      "step": 3,
+      "operation": "color_grade",
+      "tool": "video_ai_color_grade",
+      "params": {"input": "output_step2.mp4", "style": "warm_cinematic"}
+    },
+    {
+      "step": 4,
+      "operation": "loudness_normalize",
+      "tool": "ffmpeg_raw",
+      "params": {"cmd": "two-pass loudnorm to -16 LUFS, linear=true, -ar 48000"}
+    },
+    {
+      "step": 5,
+      "operation": "render",
+      "tool": "export",
+      "params": {"format": "mp4", "crf": 22, "resolution": "1920x1080"}
+    }
+  ],
+  "expected_duration": "approx 60-90s after silence removal",
+  "quality_gates": ["audio_sync", "duration_check", "lufs_check", "visual_inspection"]
+}
 ```
-# Compare quality
-ffmpeg -i output.mp4 -vf "signalstats" -f null -
 
-# Verify duration matches expectations
-ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 output.mp4
+Every plan includes **quality gates** — specific checks to run after each step.
 
-# Visual inspection — extract thumbnail
-ffmpeg -i output.mp4 -ss 00:00:30 -vframes 1 thumbnail.jpg
-```
+### Phase 4: BUILD — Execute with Production Techniques
 
-### 5. ITERATE — Fix issues and retry (max 3 attempts)
+For each step, use MCP tools first. Fall back to FFmpeg when needed.
 
-## MCP Tool Usage
+#### Cutting & Pacing
 
-When using mcp-video (the most comprehensive MCP server), these are the key tools organized by task:
-
-### Basic Operations
 ```python
-# Trim a segment
-video_trim("input.mp4", start="00:00:10", end="00:01:30")
+# MCP: silence removal (smart)
+# The -50dB threshold catches near-silence, 0.3s padding preserves natural pacing
+video_ai_remove_silence("input.mp4", threshold=-50, min_silence=0.5, padding=0.3)
 
-# Merge clips
-video_merge(["clip1.mp4", "clip2.mp4", "clip3.mp4"])
+# MCP: trim segment
+video_trim("input.mp4", start="00:01:30", end="00:02:45")
 
-# Resize for platform
-video_resize("input.mp4", width=1080, height=1920)  # Vertical for TikTok/Reels
+# FFmpeg: J-cut (audio leads video by 5-15 frames)
+# Extract audio segment shifted earlier, video at original time
+ffmpeg -i input.mp4 -itsoffset -0.3 -i input.mp4 -map 0:v -map 1:a -c copy jcut.mp4
 
-# Crop
-video_crop("input.mp4", width=720, height=720, x=0, y=0)
-
-# Speed change
-video_speed("input.mp4", speed=2.0)  # 2x speed
+# FFmpeg: multi-segment extraction with re-encode (production-safe)
+ffmpeg -i input.mp4 -ss 00:01:00 -t 30 -c:v libx264 -c:a aac seg1.mp4
+ffmpeg -i input.mp4 -ss 00:02:00 -t 45 -c:v libx264 -c:a aac seg2.mp4
+# Then concat with transition (see Transitions section)
 ```
 
-### Subtitles
+#### Audio & Sound Design
+
 ```python
-# Transcribe audio
-transcript = video_ai_transcribe("input.mp4", model="base")
+# MCP: transcribe audio
+transcript = video_ai_transcribe("input.mp4", model="base-or-large")
 
-# Burn subtitles into video
-video_subtitles("input.mp4", "subtitles.srt", style="yellow,font-size=24")
+# MCP: audio effects
+video_audio_effects("input.mp4", effect="noise_reduction", strength=0.3)
 
-# Remove silences based on transcript gaps
-video_ai_remove_silence("input.mp4", threshold=-30, min_silence=0.5)
+# FFmpeg: Two-pass loudnorm (REQUIRED for production)
+# Pass 1 — measure
+ffmpeg -i input.mp4 -af loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json -f null - 2>&1
+# Parse output for measured_I, measured_TP, measured_LRA, measured_thresh
+# Pass 2 — apply with measured values, linear=true, -ar 48000
+ffmpeg -i input.mp4 -af "loudnorm=I=-16:TP=-1.5:LRA=11:measured_I=-22.3:measured_TP=-1.8:measured_LRA=8.5:measured_thresh=-34:linear=true" -ar 48000 output.mp4
+
+# FFmpeg: Audio ducking (music lowers when voice speaks)
+ffmpeg -i voice.mp4 -i music.mp3 -filter_complex \
+  "[1:a]volume=1.0[music];[0:a]asplit=2[voice][side]; \
+   [side]asendcmd='0.0 sidechaincompress threshold=-30dB ratio=4,adelay=1|1[sc]; \
+   [music][sc]amix=inputs=2:duration=first[aout]" \
+  -map 0:v -map "[aout]" -c:v copy output.mp4
+
+# FFmpeg: Compression for take-matching (threshold -18 to -12dB, ratio 3:1-4:1)
+ffmpeg -i input.mp4 -af "acompressor=threshold=-18dB:ratio=4:attack=5:release=100" output.mp4
 ```
 
-### Color & Effects
+#### Color Grading
+
 ```python
-# Auto color grade
+# MCP: auto color grade
 video_ai_color_grade("input.mp4", style="warm_cinematic")
 
-# Manual color adjustment
-video_color("input.mp4", brightness=0.1, contrast=1.2, saturation=1.1)
+# FFmpeg: S-curve contrast (professional)
+ffmpeg -i input.mp4 -vf "curves=r='0/0 0.25/0.2 0.5/0.5 0.75/0.8 1/1':g='0/0 0.25/0.2 0.5/0.5 0.75/0.8 1/1':b='0/0 0.25/0.2 0.5/0.5 0.75/0.8 1/1'" output.mp4
 
-# Apply LUT
+# FFmpeg: Warm cinematic (talking-head default)
+ffmpeg -i input.mp4 -vf "eq=contrast=1.1:brightness=0.02:saturation=1.2,colorbalance=rs=0.1:gs=-0.05:bs=-0.05" output.mp4
+
+# FFmpeg: Teal-and-orange (cinematic)
+ffmpeg -i input.mp4 -vf "eq=contrast=1.15:saturation=0.9,colorbalance=rs=0.05:gs=-0.05:bs=0.15,curves=r='0/0 1/0.95':b='0/0 1/0.9'" output.mp4
+
+# MCP: apply 3D LUT
 video_lut("input.mp4", "lut/cinematic.cube")
-
-# Stabilize shaky footage
-video_stabilize("input.mp4")
 ```
 
-### Transitions
+#### Subtitles & Text
+
 ```python
-# Merge with crossfade
+# MCP: transcribe
+transcript = video_ai_transcribe("input.mp4", model="base")
+
+# MCP: burn subtitles with proper styling
+# Style: Max 2 lines, 37-42 chars/line, 2-word uppercase chunks
+# Pyramid shape: shorter line on top if unequal
+# 2-frame gap between consecutive captions
+video_text_subtitles("input.mp4", "subtitles.srt",
+  style="FontName=Arial,FontSize=20,PrimaryColour=&HCCFF0000,BackColour=&H80000000,Outline=1,Shadow=1,MarginV=40",
+  max_lines=2, chars_per_line=42)
+
+# FFmpeg: hardcode subtitles with production styling
+ffmpeg -i input.mp4 -vf "subtitles=sub.srt:force_style='Fontname=DejaVu Serif,FontSize=22,PrimaryColour=&HCCFF0000,BackColour=&H80000000,Outline=1,Shadow=2,MarginV=50,BorderStyle=3'" output.mp4
+
+# Aspect-ratio-specific:
+# 16:9 → 6-word ALL CAPS chunks at ~80% frame height
+# 9:16 (vertical) → 3-word chunks, larger relative font, ~75% height, centered safe box
+```
+
+#### Transitions
+
+```python
+# MCP: merge with crossfade
 video_merge(["clip1.mp4", "clip2.mp4"], transition="fade", duration=0.5)
 
-# Glitch transition
-video_transition_glitch("clip1.mp4", "clip2.mp4")
+# FFmpeg: xfade with cubic-ease easing (professional, not linear default)
+# Map progress P (0→1) through cubic ease: if(lt(P,0.5), 4*P*P*P, 1-pow(-2*P+2,3)/2)
+ffmpeg -i clip1.mp4 -i clip2.mp4 -filter_complex \
+  "[0:v]trim=0:5[v0];[1:v]trim=0:5[v1]; \
+   [v0][v1]xfade=offset=3:duration=2:transition=fade[vout]; \
+   [0:a]atrim=0:5[a0];[1:a]atrim=0:5[a1]; \
+   [a0][a1]acrossfade=d=2[aout]" \
+  -map "[vout]" -map "[aout]" output.mp4
 
-# Morph transition
-video_transition_morph("clip1.mp4", "clip2.mp4")
+# VALIDATION: Check xfade offset < clip1_duration - transition_duration
+# AND clip2_duration >= transition_duration before rendering
 ```
 
-### Layout & Compositing
+#### Motion Graphics & Effects
+
 ```python
-# Picture-in-picture
+# MCP: animated text
+video_text_animated("input.mp4", text="Hello World", preset="fade_in", duration=3)
+
+# MCP: picture-in-picture
 video_layout_pip("main.mp4", "overlay.mp4", position="bottom-right", scale=0.3)
 
-# Grid layout
-video_layout_grid(["cam1.mp4", "cam2.mp4", "cam3.mp4", "cam4.mp4"], layout="2x2")
+# MCP: grid layout
+video_layout_grid(["cam1.mp4", "cam2.mp4"], layout="2x1")
 
-# Animated text
-video_text_animated("input.mp4", text="Hello World", preset="fade_in", duration=3)
+# FFmpeg: Ken Burns dynamic zoom (slow zoom with ease-out deceleration)
+ffmpeg -i input.mp4 -vf "zoompan=z='min(zoom+0.002,1.2)':d=150:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'" output.mp4
+
+# FFmpeg: face-tracked dynamic zoom (talking-head)
+# Scale crop by rhetorical emphasis: full frame → head-to-chest → head-and-shoulders
+# Implemented via zoompan with multiple keyframes
 ```
 
-### Analysis
-```python
-# Scene detection
-scenes = video_ai_scene_detect("input.mp4", threshold=0.3)
+### Phase 5: VERIFY — Quality Gates
 
-# Detailed info
-info = video_info_detailed("input.mp4")
+After every step, verify. Never assume success.
 
-# Storyboard (timeline view)
-video_storyboard("input.mp4", cols=8)
-
-# Quality check
-video_quality_compare("input_original.mp4", "output_edited.mp4")
-```
-
-## Raw FFmpeg Commands
-
-When MCP tools aren't available, use these FFmpeg patterns:
-
-### Trimming
 ```bash
-# Precise cut (fast, may lose keyframe accuracy at start)
-ffmpeg -i input.mp4 -ss 00:01:30 -to 00:02:45 -c copy output.mp4
+# Gate 1: Output exists and is non-empty
+test -f output.mp4 && stat -c%s output.mp4
 
-# Frame-accurate cut (re-encodes, accurate)
-ffmpeg -i input.mp4 -ss 00:01:30 -to 00:02:45 -c:v libx264 -c:a aac output.mp4
+# Gate 2: Duration matches expectations
+ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 output.mp4
+
+# Gate 3: Both audio and video streams present
+ffprobe -v error -show_entries stream=codec_type -of csv=p=0 output.mp4 | sort -u
+
+# Gate 4: Audio sync check (compare duration of audio vs video streams)
+ffprobe -v error -select_streams v:0 -show_entries stream=duration -of default=noprint_wrappers=1:nokey=1 output.mp4
+ffprobe -v error -select_streams a:0 -show_entries stream=duration -of default=noprint_wrappers=1:nokey=1 output.mp4
+# Durations should be within 0.5s of each other
+
+# Gate 5: LUFS check (if loudness was normalized)
+ffmpeg -i output.mp4 -af loudnorm=print_format=json -f null - 2>&1 | grep -E "input_i|input_lra"
+
+# Gate 6: Visual inspection (thumbnail at 3 points)
+ffmpeg -i output.mp4 -ss 00:00:10 -vframes 1 check_10s.jpg
+ffmpeg -i output.mp4 -ss 00:01:00 -vframes 1 check_60s.jpg
+ffmpeg -i output.mp4 -ss 00:02:00 -vframes 1 check_120s.jpg
 ```
 
-### Concatenation
-```bash
-# Method 1: concat demuxer (files must have same codecs)
-echo "file 'clip1.mp4'\nfile 'clip2.mp4'" > clips.txt
-ffmpeg -f concat -safe 0 -i clips.txt -c copy output.mp4
+If any gate fails, diagnose via the Error Recovery table below.
 
-# Method 2: concat filter (different codecs, re-encodes)
-ffmpeg -i clip1.mp4 -i clip2.mp4 -filter_complex \
-  "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[outv][outa]" \
-  -map "[outv]" -map "[outa]" output.mp4
+## Error Recovery
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Audio out of sync after trim | Stream copy at non-keyframe | Use `-ss` before `-i` with re-encode |
+| Loudnorm pumping | Single-pass instead of two-pass | Always do two-pass with `linear=true` |
+| Xfade "failed to configure" | Offset exceeds clip duration | Verify offset <= clip1_dur - transition_dur, clip2_dur >= transition_dur |
+| Blip at concat boundary | Non-keyframe concat with -c copy | Re-encode segments or use concat filter |
+| Subtitles not visible | Wrong font filter or missing library | Use `subtitles=file.srt:force_style=...` with `--enable-libfreetype` |
+| Black frames at start | -ss after -i seeks to non-keyframe | Place -ss before -i or re-encode |
+| Whisper no segments | Wrong language or silent track | Check `ffprobe` audio stream, specify `--language` |
+| Cropped video looks wrong | Aspect ratio mismatch | Use `force_original_aspect_ratio=decrease,pad` |
+| Output too large | No compression flags | Add `-crf 22 -c:a aac -b:a 128k` |
+| Speed change has no audio | atempo not applied | Always pair `setpts` with `atempo` |
+| Remotion/Hyperframes flicker | Unseeded random | Use platform's seeded random API |
+
+## Workflow Templates
+
+### Podcast-to-Shorts (Production)
+
+```
+1. PROBE: Transcribe full podcast → word-level timestamps + speaker diarization
+2. CLASSIFY: content_type=podcast, target=tiktok/reels
+3. PLAN: Find 30-60s engaging segments (high energy, quotable, clear audio)
+4. For EACH segment:
+   a. Extract with re-encode: ffmpeg -i full.mp4 -ss X -t 45 -c:v libx264 -c:a aac seg.mp4
+   b. Resize to 1080×1920 vertical: video_resize(seg.mp4, 1080, 1920)
+   c. Add animated captions: 3-word chunks, 75% height, centered safe box
+   d. Dynamic zoom: face-tracked, zoom by rhetorical emphasis
+   e. Two-pass loudnorm to -14 LUFS (social platform target)
+   f. Two-frame gap between subtitle chunks
+5. VERIFY: Check sync at 3 random timestamps per segment
+6. OUTPUT: Batch directory of short clips, named by timestamp
 ```
 
-### Transitions
-```bash
-# Crossfade (xfade) between two videos
-ffmpeg -i clip1.mp4 -i clip2.mp4 -filter_complex \
-  "[0:v]trim=0:5[v0];[1:v]trim=0:5[v1];[v0][v1]xfade=offset=3:duration=2:transition=fade" \
-  -c:a copy output.mp4
+### Silence Removal + Pacing (Talking Head)
+
+```
+1. PROBE: silencedetect at -50dB threshold
+2. CLASSIFY: content_type=talking-head
+3. PLAN:
+   - Detect gaps >0.5s
+   - Trim to 0.3s (not 0 — zero reads as edit, 0.3s reads as natural breath)
+   - Apply 30ms audio fade at every cut (prevents click)
+4. EXECUTE:
+   a. video_ai_remove_silence(input, threshold=-50, min_silence=0.5, padding=0.3)
+   b. Or FFmpeg: silenceremove with leave_silence=0.3
+5. VERIFY: Listen to 5 random cut points for audio clicks
+6. OUTPUT: Tightened video with natural pacing preserved
 ```
 
-### Subtitles
-```bash
-# Burn subtitles into video (hardcode)
-ffmpeg -i input.mp4 -vf "subtitles=subtitles.srt" output.mp4
+### Auto-Subtitles (Production Quality)
 
-# Soft subtitles (as separate track - keep original video)
-ffmpeg -i input.mp4 -i subtitles.srt -c copy -c:s mov_text output.mp4
+```
+1. PROBE: Transcribe with Whisper large model for accuracy
+2. CLASSIFY: target_platform determines subtitle style
+3. BUILD SRT with production rules:
+   - Max 2 lines per caption
+   - 37-42 chars per line (BBC/Netflix standard)
+   - Line breaks respect syntax (never split article/noun)
+   - 12-20 chars/sec reading speed
+   - Minimum 1s display, maximum 6s
+   - 2-frame gap between consecutive captions
+   - 16:9 → 6-word ALL CAPS chunks, ~80% height
+   - 9:16 → 3-word chunks, ~75% height, centered safe box
+4. BURN: subtitles apply LAST in filter chain
+5. VERIFY: Check 5 random timestamps for sync + readability
+6. OUTPUT: Video with production-quality hardcoded subtitles
 ```
 
-### Audio
-```bash
-# Extract audio
-ffmpeg -i input.mp4 -q:a 0 -map a output.mp3
+### Color Grading Pipeline
 
-# Replace audio track
-ffmpeg -i video.mp4 -i audio.mp3 -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 output.mp4
-
-# Silence detection
-ffmpeg -i input.mp4 -af "silencedetect=noise=-30dB:d=0.5" -f null -
-
-# Loudness normalization (LUFS)
-ffmpeg -i input.mp4 -af "loudnorm=I=-14:LRA=1:TP=-1" output.mp4
+```
+1. PROBE: Analyze footage — log or rec709? Underexposed? Color cast?
+2. CLASSIFY: cinematic → use LUT/curves; talking-head → warm shift + S-curve
+3. EXECUTE in order:
+   a. Normalize exposure (eq=brightness)
+   b. Correct color cast (colorbalance)
+   c. Apply contrast (curves S-curve)
+   d. Adjust saturation (eq=saturation)
+   e. Apply creative look (LUT or warm/cool shift)
+   f. Vignette (subtle, PI/4 or less)
+4. VERIFY: Thumbnail at 3 points, check skin tones not clipped
+5. OUTPUT: Color-graded video
 ```
 
-### Color Grading
-```bash
-# Apply color correction
-ffmpeg -i input.mp4 -vf "eq=brightness=0.05:contrast=1.2:saturation=1.3" output.mp4
+## Contradiction Log
 
-# Apply color balance
-ffmpeg -i input.mp4 -vf "colorbalance=rs=-0.1:gs=0.05:bs=0.1" output.mp4
+Sources disagree on some parameters. Surface these to the user instead of silently picking one.
 
-# Apply 3D LUT
-ffmpeg -i input.mp4 -vf "lut3d=file=cinestyle.cube" output.mp4
+| Topic | Position A | Position B | Default |
+|-------|-----------|-----------|---------|
+| J/L-cut offset | 5-15 frames (tech/doc) | 1-2 seconds (vlog) | Pick by content type |
+| Loudness target | -14 LUFS (streaming) | -16 LUFS (talking-head) | -16 for dialogue, -14 for social |
+| Silence threshold | -30dB | -50dB | -50dB (catches more, padding prevents harshness) |
+| Subtitle line length | 37 chars (BBC) | 42 chars (Netflix) | 42 chars (wider compatibility) |
+| Transition SFX | Always required | Optional | Always required for whip/glitch/zoom |
 
-# Color curves (RGB curves)
-ffmpeg -i input.mp4 -vf "curves=r='0/0 0.5/0.6 1/1':g='0/0 0.5/0.5 1/1':b='0/0 0.2/0.3 1/1'" output.mp4
+## Project Memory Pattern
 
-# Warm cinematic look
-ffmpeg -i input.mp4 -vf "eq=contrast=1.1:brightness=0.02:saturation=1.2,colorbalance=rs=0.1:gs=-0.05:bs=-0.05" output.mp4
+For multi-step edits, persist a project file:
+
+```json
+{
+  "project": "my_edit",
+  "source": "input.mp4",
+  "source_profile": {"duration": 300, "resolution": "1920x1080", "codec": "h264"},
+  "plan": [...],
+  "steps_completed": [1, 2, 3],
+  "step_outputs": {
+    "1": "transcript.json",
+    "2": "no_silence.mp4",
+    "3": "graded.mp4"
+  },
+  "quality_gates_passed": [true, true, true],
+  "final_output": "output.mp4",
+  "errors_encountered": [],
+  "contradictions_resolved": {"loudness_target": "-16 LUFS"}
+}
 ```
 
-### Speed / Slow Motion
-```bash
-# 2x speed (dropping frames, keeping audio pitch)
-ffmpeg -i input.mp4 -filter_complex "[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0[a]" -map "[v]" -map "[a]" output.mp4
-
-# Slow motion 0.5x
-ffmpeg -i input.mp4 -filter_complex "[0:v]setpts=2.0*PTS[v];[0:a]atempo=0.5[a]" -map "[v]" -map "[a]" output.mp4
-```
-
-### Stabilization
-```bash
-# Step 1: Analyze
-ffmpeg -i input.mp4 -vf "vidstabdetect=shakiness=10:accuracy=15" -f null -
-
-# Step 2: Apply
-ffmpeg -i input.mp4 -vf "vidstabtransform=smoothing=30:input="transforms.trf"" output.mp4
-```
-
-### Scene Detection
-```bash
-# Detect scene changes (outputs frame numbers)
-ffmpeg -i input.mp4 -filter:v "select='gt(scene,0.4)',showinfo" -f null - 2>&1 | grep pts_time
-
-# Extract scene frames as thumbnails
-ffmpeg -i input.mp4 -vf "select='gt(scene,0.4)'" -vsync vfr thumb_%04d.jpg
-```
-
-### Effects
-```bash
-# Vignette
-ffmpeg -i input.mp4 -vf "vignette=PI/4" output.mp4
-
-# Black and white
-ffmpeg -i input.mp4 -vf "hue=s=0" output.mp4
-
-# Blur
-ffmpeg -i input.mp4 -vf "boxblur=10:5" output.mp4
-
-# Old film / sepia
-ffmpeg -i input.mp4 -vf "colorchannelmixer=.393:.769:.189:.349:.686:.168:.272:.534:.131" output.mp4
-```
-
-### Format Conversion
-```bash
-# MP4 to GIF
-ffmpeg -i input.mp4 -vf "fps=10,scale=480:-1:flags=lanczos" -c:v gif output.gif
-
-# Vertical video for Reels/TikTok (9:16)
-ffmpeg -i input.mp4 -vf "crop=ih*9/16:ih" output.mp4
-
-# Square for Instagram
-ffmpeg -i input.mp4 -vf "crop=min(iw\,ih):min(iw\,ih)" output.mp4
-
-# Compress for web
-ffmpeg -i input.mp4 -c:v libx264 -crf 28 -c:a aac -b:a 128k output_web.mp4
-```
-
-## Agent Workflow Templates
-
-### Podcast-to-Shorts
-```
-1. PROBE: Transcribe full podcast → get word-level timestamps
-2. PLAN: Find most engaging 30-60s segments (high energy, quotable moments)
-3. EDIT: For each segment:
-   a. Trim to duration
-   b. Add animated captions (word-highlight style)
-   c. Resize to 1080×1920 (vertical)
-   d. Add subtle zoom effect (ken burns)
-   e. Normalize audio to -14 LUFS
-4. REVIEW: Check sync, watch one thumbnail per segment
-5. OUTPUT: Batch of short clips
-```
-
-### Silence Removal
-```
-1. PROBE: Run silence detection on audio track
-2. PLAN: Identify all silent gaps >0.5s with threshold -30dB
-3. EDIT: 
-   - For simple removal: Use `video_ai_remove_silence` or write concat of non-silent segments
-   - For smart removal: Keep short pauses (<0.3s) for natural pacing, remove longer ones
-4. REVIEW: Listen to 3 random spots, verify no audio glitches at cut points
-5. OUTPUT: Tightened video with natural pacing preserved
-```
-
-### Auto-Subtitles
-```
-1. PROBE: Transcribe with Whisper (use large model for accuracy if needed)
-2. EDIT:
-   a. Generate SRT with word-level timestamps (WhisperX for best alignment)
-   b. Style: 2-word chunks, uppercase, yellow on black background
-   c. Burn subtitles into video
-3. REVIEW: Check 5 random timestamps for sync accuracy
-4. OUTPUT: Video with hardcoded subtitles
-```
-
-## Edge Cases & Error Handling
-
-### Common Failures and Fixes
-
-| Symptom | Likely Cause | Fix |
-|---------|-------------|-----|
-| Audio out of sync after trim | Stream copy with non-keyframe start | Re-encode with `-c:v libx264` |
-| Black frames at start/end | Missing seek to nearest keyframe | Use re-encode or add `-seek 0` |
-| FFmpeg "No such filter" | Missing library | Install full ffmpeg: `brew install ffmpeg --with-all` |
-| MCP tool returns error | Invalid parameter or missing file | Check path exists, validate parameters |
-| Whisper returns no segments | Wrong language or silent audio | Verify audio track exists, specify language |
-| Subtitles don't show | Wrong font filter for codec | Use `subtitles=file.srt:force_style='FontName=Arial'` |
-| Large file output | No re-encode, stream copy of original | Add CRF compression: `-crf 23` |
-| CUDA/OOM with AI features | GPU memory limits | Fall back to CPU, reduce model size |
-
-### Validation Checklist
-Before presenting output as done:
-- [ ] Output file exists and is non-empty
-- [ ] Duration is within expected range
-- [ ] Audio plays (check with ffprobe stream info)
-- [ ] Video plays (check with ffprobe stream info)
-- [ ] Subtitles are visible (if added)
-- [ ] No sync issues (check at 3 random timestamps)
-- [ ] Output format matches requirements
+This lets agents resume interrupted work and learn from past failures.
 
 ## Configuration Files
 
-### Claude Desktop MCP Config
+### Claude Desktop / Cline / Cursor
 ```json
 {
   "mcpServers": {
@@ -357,19 +435,7 @@ Before presenting output as done:
 }
 ```
 
-### Cline / Cursor MCP Config
-```json
-{
-  "mcpServers": {
-    "mcp-video": {
-      "command": "uvx",
-      "args": ["mcp-video"]
-    }
-  }
-}
-```
-
-### OpenCode MCP Config
+### OpenCode
 ```json
 {
   "mcpServers": {
@@ -383,19 +449,25 @@ Before presenting output as done:
 
 ## LLM Recommendations
 
-| Use Case | Recommended LLM | Why |
-|----------|----------------|-----|
+| Use Case | LLM | Why |
+|----------|-----|-----|
 | Simple trim/cut/subtitle | Ollama + Qwen2.5-Coder 7B | 88% FFmpeg accuracy, free, local |
-| Complex multi-step edit | Claude / GPT-4o | Better reasoning, fewer failures |
+| Complex multi-step | Claude / GPT-4o | Better reasoning, fewer retries |
 | Batch processing | Groq (Llama 3) | Fast inference, free tier |
 | Maximum privacy | Ollama + Qwen2.5-Coder 14B | Fully local, good quality |
+| MCP-native | OpenCode (free) | Native MCP support, free tier |
 
-## References
+## One-Command Install
 
-- [mcp-video](https://github.com/KyaniteLabs/mcp-video) — 119 MCP tools for video editing
-- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) — Local transcription
-- [FFmpeg Documentation](https://ffmpeg.org/documentation.html) — Full command reference
-- [video-use](https://github.com/browser-use/video-use) — Transcript-first editing skill
-- [CutAgent](https://github.com/DaKev/cutagent) — Declarative EDL for agents
-- [Kdenlive MCP](https://github.com/D-Ogi/mcp-kdenlive) — Professional NLE control
-- [ELLMPEG Paper](https://arxiv.org/abs/2602.00028) — Qwen2.5-Coder for FFmpeg
+```bash
+curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash
+```
+
+## Sources
+
+- video-use/editing-craft SKILL.md — Production techniques, Hard Rules, contradiction log
+- ELLMPEG paper (arXiv:2602.00028) — Qwen2.5-Coder 88% FFmpeg accuracy
+- mcp-video docs — 119 MCP tools for video editing
+- FFmpeg documentation — Command reference
+- Netflix/Techblog — Subtitle readability standards (37-42 chars, 12-20 cps)
+- ITU-R BS.1770-4 — Broadcast loudness standard
