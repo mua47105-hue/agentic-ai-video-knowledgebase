@@ -5,7 +5,7 @@ tags: [ffmpeg, commands, reference, editing]
 created: 2026-07-06
 updated: 2026-07-06
 sources: []
-related: [free-ai-video-editing-stack, mcp-video-servers, skill]
+related: [free-ai-video-editing-stack, mcp-video-servers]
 ---
 
 # FFmpeg Command Reference for AI Agents

@@ -5,7 +5,7 @@ tags: [architecture, taxonomy]
 created: 2026-07-06
 updated: 2026-07-06
 sources: []
-related: [multi-agent-orchestration, runway-gen-4, pika-2-5]
+related: [multi-agent-orchestration]
 ---
 
 # Agentic vs Generative — The Two Layers

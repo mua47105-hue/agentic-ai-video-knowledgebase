@@ -35,7 +35,7 @@ Sora was the first model to demonstrate photorealistic text-to-video with physic
 
 ## Migration advice
 
-Export your content at sora.chatgpt.com/sunset before September 24, 2026. Primary migration targets: [Google Veo 3](../entities/google-veo-3) (narrative/audio) and [Runway Gen-4](../entities/runway-gen-4) (control/production).
+Export your content at sora.chatgpt.com/sunset before September 24, 2026. Primary migration targets: [Google Veo 3](../archive/google-veo-3) (narrative/audio) and [Runway Gen-4](../archive/runway-gen-4) (control/production).
 
 ## Links
 

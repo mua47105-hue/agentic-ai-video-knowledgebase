@@ -5,7 +5,7 @@ tags: [architecture, orchestration, agents]
 created: 2026-07-06
 updated: 2026-07-06
 sources: []
-related: [video-agent, crayotter, openmontage, univa, textual-gradient-graph]
+related: [video-agent, crayotter, openmontage, univa]
 ---
 
 # Multi-Agent Orchestration

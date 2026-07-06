@@ -7,6 +7,9 @@ A structured, interlinked knowledge base about AI agents that edit videos autono
 ```bash
 git clone <repo-url>
 cd agentic-ai-video-knowledgebase
+
+# One-command install (FFmpeg + MCP + Whisper + optional Ollama)
+curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash
 ```
 
 ### Browse the wiki
@@ -27,7 +30,7 @@ python3 kb/tools/search.py "your query"
 python3 kb/tools/search.py "your query" --vector
 
 # View a specific page
-python3 kb/tools/search.py --page entities/runway-gen-4.md
+python3 kb/tools/search.py --page entities/mcp-video-servers.md
 
 # Output as JSON
 python3 kb/tools/search.py "text to video" --json
@@ -87,11 +90,13 @@ Then:
 
 ## Current Contents (July 2026)
 
-- **24 entities**: MCP servers, Whisper ecosystem, video-use, MakeMyClip, CutAgent, CutRoom, VideoAgent, OpenMontage, Crayotter, UniVA, CutClaw, AVE, AI_Editor, Pilipili-AutoVideo, X-Cut, Project Montage (archived: generative models)
+- **25 entities** (16 active + 9 archived): MCP servers, Whisper ecosystem, video-use, MakeMyClip, CutAgent, CutRoom, VideoAgent, OpenMontage, Crayotter, UniVA, CutClaw, AVE, AI_Editor, Pilipili-AutoVideo, X-Cut, Project Montage + gen models archived
 - **3 concepts**: Multi-Agent Orchestration, Self-Evaluation Loop, Agentic vs Generative
 - **3 comparisons**: MCP server matrix (12 servers), agentic frameworks (10 frameworks), AI video models
 - **Root-level SKILL.md**: Auto-discoverable by any LLM agent, complete video editing skill
 - **4 guides**: Free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint
+- **1 chart**: Model quality vs speed vs cost
+- **Scripts**: One-command setup (`scripts/setup.sh`), universal agent prompt (`scripts/agent-prompt.md`)
 
 ## Requirements
 

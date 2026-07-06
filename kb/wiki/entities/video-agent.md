@@ -4,7 +4,7 @@ type: entity
 tags: [multi-agent, open-source, research, hku]
 created: 2026-07-06
 updated: 2026-07-06
-sources: [source-videoagent-arxiv]
+sources: []
 related: [crayotter, openmontage, univa]
 ---
 

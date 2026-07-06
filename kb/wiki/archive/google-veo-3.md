@@ -43,7 +43,7 @@ Google DeepMind's video generation model. Veo 3 (and Veo 3.1) is the strongest o
 
 ## Best for
 
-Narrative video, product demos, voiceover-driven content, enterprise video at scale via GCP. The primary migration target for Sora refugees. Used in [Project Montage](../entities/project-montage) and [EzVideo](../entities/ezvideo).
+Narrative video, product demos, voiceover-driven content, enterprise video at scale via GCP. The primary migration target for Sora refugees. Used in [Project Montage](../entities/project-montage) and [EzVideo](../archive/ezvideo).
 
 ## Links
 

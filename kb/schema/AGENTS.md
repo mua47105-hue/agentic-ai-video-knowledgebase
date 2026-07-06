@@ -45,7 +45,7 @@ related: [pika-labs, sora]         # links to related wiki pages
 ---
 ```
 
-- Internal links use relative paths without `.md` extension: `[Runway Gen-3](../entities/runway-gen-3)`
+- Internal links use relative paths without `.md` extension: `[CutAgent](../entities/cutagent)`
 - External links use full URLs.
 - Keep pages focused. If a page exceeds ~300 lines, split into sub-pages.
 

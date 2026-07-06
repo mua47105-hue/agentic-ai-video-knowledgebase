@@ -5,7 +5,7 @@ tags: [llm, local, ollama, qwen, setup, guide]
 created: 2026-07-06
 updated: 2026-07-06
 sources: []
-related: [free-ai-video-editing-stack, skill, ffmpeg-command-reference]
+related: [free-ai-video-editing-stack, ffmpeg-command-reference]
 ---
 
 # Local LLM Setup for AI Video Editing

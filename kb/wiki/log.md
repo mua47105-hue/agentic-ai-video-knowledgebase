@@ -110,3 +110,9 @@ Updated FFmpeg reference with: two-pass loudnorm (measurement + linear apply, ex
 ## [2026-07-06] enhance | Blueprint — production gates + content-type routing
 
 Updated blueprint with: content-type routing table (8 content types), production correctness checklist (10 items beyond tool check), contradiction log (6 disagreements surfaced to user), enhanced decision flowchart with CLASSIFY and VERIFY phases.
+
+## [2026-07-06] audit | Full repo audit and fix
+
+Ran comprehensive audit: fixed 7 broken links from archived pages, removed 2 dangling sources refs, fixed 4 dangling related refs, added 3 missing pages from index (Project Montage, AI video models comparison, chart), fixed README entity count (25) and stale example path, updated overview with complete entity list, added AGENTS.md/SKILL.md/scripts/ to CLAUDE.md structure, added scripts/ to AGENTS.md, added chart reference to index, hyperlinked archive entries, created missing assets directory, updated stale example slugs in CLAUDE.md and schema.
+
+Overall tally: 16 active entities, 9 archived entities, 3 concepts, 4 guides, 3 comparisons, 1 chart, 0 sources, plus SKILL.md at root level.

@@ -44,6 +44,7 @@ updated: 2026-07-06
 - [AI_Editor](entities/ai-editor) — Full-stack pipeline, CV scene analysis, Shotstack rendering
 - [Pilipili-AutoVideo](entities/pilipili-autovideo) — Local end-to-end, Mem0 memory, CapCut export
 - [X-Cut](entities/x-cut) — Chat-driven agent, Remotion rendering (concept stage)
+- [Project Montage](entities/project-montage) — Google's multi-agent video builder (research)
 
 ## Concepts
 
@@ -55,6 +56,7 @@ updated: 2026-07-06
 
 - [Agentic Frameworks 2026](comparisons/agentic-frameworks-2026) — 10 frameworks compared
 - [MCP Server Matrix 2026](comparisons/mcp-servers-2026) — 12 MCP servers across 30+ feature dimensions
+- [AI Video Generation Models 2026](comparisons/ai-video-models-2026) — Runway vs Pika vs Veo vs Kling vs Sora (archived reference)
 
 ## Skills
 
@@ -64,10 +66,10 @@ updated: 2026-07-06
 
 ## Charts
 
-- *(none yet for editing tools)*
+- [Model Quality vs Speed vs Cost](charts/model-quality-speed-cost) — Matplotlib bubble chart comparing AI video models
 
 ## Archive (Generative Models)
 
 Moved to `archive/` — these are AI video generation models, not editing agents:
-- Runway Gen-4, Pika 2.5, Google Veo 3, Sora, Kling 3.0
-- Nano Banana, EzVideo, Shorz, Magicroll AI Agent
+- [Runway Gen-4](archive/runway-gen-4), [Pika 2.5](archive/pika-2-5), [Google Veo 3](archive/google-veo-3), [Sora](archive/sora), [Kling 3.0](archive/kling-3-0)
+- [Nano Banana](archive/nano-banana), [EzVideo](archive/ezvideo), [Shorz](archive/shorz), [Magicroll AI Agent](archive/magicroll)

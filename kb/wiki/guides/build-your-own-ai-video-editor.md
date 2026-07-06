@@ -5,7 +5,7 @@ tags: [blueprint, architecture, workflow, guide]
 created: 2026-07-06
 updated: 2026-07-06
 sources: []
-related: [free-ai-video-editing-stack, skill, ffmpeg-command-reference, local-llm-setup, mcp-servers-2026]
+related: [free-ai-video-editing-stack, ffmpeg-command-reference, local-llm-setup, mcp-servers-2026]
 ---
 
 # Build Your Own AI Video Editor — Blueprint

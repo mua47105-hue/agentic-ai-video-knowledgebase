@@ -14,10 +14,10 @@ related: [runway-gen-4, pika-2-5, google-veo-3, sora, kling-3-0]
 
 | Use Case | Recommended Tool |
 |----------|-----------------|
-| Professional production / client deliverables | [Runway Gen-4](../entities/runway-gen-4) |
-| Social media / viral effects / high volume | [Pika 2.5](../entities/pika-2-5) |
-| Narrative / audio-driven / enterprise | [Google Veo 3](../entities/google-veo-3) |
-| Cinematic 4K on a budget | [Kling 3.0](../entities/kling-3-0) |
+| Professional production / client deliverables | [Runway Gen-4](../archive/runway-gen-4) |
+| Social media / viral effects / high volume | [Pika 2.5](../archive/pika-2-5) |
+| Narrative / audio-driven / enterprise | [Google Veo 3](../archive/google-veo-3) |
+| Cinematic 4K on a budget | [Kling 3.0](../archive/kling-3-0) |
 | Do not start new work | ~~Sora~~ (discontinued) |
 
 ## Feature Comparison

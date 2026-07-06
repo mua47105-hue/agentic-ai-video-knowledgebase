@@ -8,8 +8,13 @@ Your job is to build and maintain a structured wiki about AI agents that EDIT ex
 ## Directory structure
 
 ```
+├── AGENTS.md              # Entry point for Codex/other agents
 ├── CLAUDE.md              # This file — your complete instructions
 ├── README.md              # Human-readable overview
+├── SKILL.md               # AI video editing agent skill (auto-discoverable)
+├── scripts/
+│   ├── setup.sh           # One-command install: FFmpeg + MCP + Whisper + Ollama
+│   └── agent-prompt.md    # Universal copy-paste prompt for any LLM agent
 ├── kb/
 │   ├── raw/               # Source documents (immutable — you read, never write)
 │   │   └── assets/        # Images, diagrams from sources
@@ -48,7 +53,7 @@ related: [pika-labs, sora]         # links to related wiki pages
 ---
 ```
 
-- Internal links use relative paths without `.md` extension: `[Runway Gen-3](../entities/runway-gen-3)`
+- Internal links use relative paths without `.md` extension: `[MCP Servers](../entities/mcp-video-servers)`
 - External links use full URLs.
 - Keep pages focused. If a page exceeds ~300 lines, split into sub-pages.
 
@@ -129,6 +134,9 @@ Pass `--help` for options.
 
 | File | Purpose |
 |------|---------|
+| `SKILL.md` | AI video editing agent skill — copy this into any LLM agent |
+| `scripts/agent-prompt.md` | Universal copy-paste system prompt |
+| `scripts/setup.sh` | One-command install script |
 | `kb/wiki/index.md` | Content catalog — read this first to find relevant pages |
 | `kb/wiki/log.md` | Chronological record of all operations |
 | `kb/wiki/overview.md` | Living top-level synthesis |

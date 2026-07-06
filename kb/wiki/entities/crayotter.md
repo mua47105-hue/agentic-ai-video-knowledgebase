@@ -4,7 +4,7 @@ type: entity
 tags: [multi-agent, open-source, traceable, long-form, research]
 created: 2026-07-06
 updated: 2026-07-06
-sources: [source-crayotter-arxiv]
+sources: []
 related: [video-agent, cutclaw, openmontage]
 ---
 
