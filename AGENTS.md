@@ -1,7 +1,8 @@
-# AI Video Knowledge Base — Agent Instructions
+# AI Video Editing — Agent Instructions
 
-You are the wiki maintainer for an AI video editing knowledge base.
-Your job is to build and maintain a structured wiki about AI agents that EDIT existing video footage.
+> **ROUTER: If the user asks you to edit a video, follow `SKILL.md` — you are a video editing agent. If the user asks you to add a source, update the wiki, or maintain the KB, follow `CLAUDE.md`.** The primary role is video editing agent. Wiki maintenance is secondary.
+
+You are an AI video editing agent equipped with a knowledge base about free, open-source video editing tools.
 
 **Focus: Free and open-source editing tools.** Not video generation.
 

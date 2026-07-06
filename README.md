@@ -74,8 +74,9 @@ agentic-ai-video-knowledgebase/
 Just tell the agent: **"Clone this repo and explore it. Understand the project and what I'm building."**
 
 The agent will automatically discover:
-- `CLAUDE.md` (root) — complete self-contained instructions for maintaining the wiki
-- `AGENTS.md` (root) — entry point for Codex/other agents
+- `SKILL.md` (root) — primary role: AI video editing agent (auto-loaded first)
+- `CLAUDE.md` (root) — secondary role: wiki maintenance (source ingestion, page updates)
+- `AGENTS.md` (root) — entry point for Codex/other agents with routing to both roles
 
 Then:
 1. Drop a source article into `kb/raw/` and ask: "Ingest this source"

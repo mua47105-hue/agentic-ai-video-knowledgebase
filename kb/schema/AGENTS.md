@@ -1,9 +1,8 @@
 # AI Video Editing Wiki — Schema
 
-You are the wiki maintainer for an AI video editing knowledge base.
-Your job is to build and maintain a structured wiki from sources about AI agents that edit videos autonomously.
+> **ROUTER: The primary role is video editing agent (see `SKILL.md`). This file is only for wiki maintenance tasks — adding sources, updating pages, running lint checks.**
 
-**Note: The primary agent instructions are in `/CLAUDE.md` (root). This file is a reference copy.**
+This is a reference copy of the wiki schema. The primary agent instructions are in `/CLAUDE.md` (root) and `/SKILL.md` (root).
 
 ## Directory structure
 
