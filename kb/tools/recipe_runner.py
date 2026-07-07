@@ -285,12 +285,30 @@ def _resolve_tool(tool_name: str) -> t.Callable:
     return fn
 
 
-def _call_tool(tool_name: str, params: dict) -> t.Any:
+def _call_tool(tool_name: str, params: dict, *, context: dict | None = None) -> t.Any:
     fn = _resolve_tool(tool_name)
+    # Pass context to functions that accept it (the recipe.find_* family)
+    if context is not None and _accepts_context(fn):
+        try:
+            return fn(context=context, **params)
+        except TypeError as e:
+            raise TypeError(f"tool {tool_name}({list(params)}): {e}")
     try:
         return fn(**params)
     except TypeError as e:
         raise TypeError(f"tool {tool_name}({list(params)}): {e}")
+
+
+def _accepts_context(fn: t.Callable) -> bool:
+    """Check if a function accepts a 'context' keyword argument."""
+    import inspect
+    try:
+        sig = inspect.signature(fn)
+        return "context" in sig.parameters or any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+        )
+    except (ValueError, TypeError):
+        return False
 
 
 # ── Built-in recipe tools ──
@@ -304,6 +322,7 @@ def _find_engaging_segments(
     criteria: list[str] | None = None,
     target_platform: str = "",
     pacing: str = "",
+    context: dict | None = None,
 ) -> list[dict]:
     """Find engaging segments using multi-signal scoring (Section 4).
 
@@ -314,7 +333,35 @@ def _find_engaging_segments(
 
     When target_platform or pacing is set, min/max defaults pull
     from PLATFORM_SPECS / PACING_PRESETS.
+
+    Phase 5 wiring: if context has _paced_plan (from Phase 8 pacing engine),
+    use kept segments as the PRIMARY signal — they're scored by the multimodal
+    relevance map + Murch cut detector, far richer than transcript-only heuristics.
+    Falls back to transcript-only scoring only when the intelligence layer didn't run.
     """
+    # Phase 5: Intelligence layer first — use paced_plan kept segments if available
+    if context is not None:
+        paced = context.get("_paced_plan")
+        if paced and paced.get("segments"):
+            kept = [s for s in paced["segments"] if s.get("keep", True)
+                    and min_duration <= (s["end"] - s["start"]) <= max_duration]
+            if kept:
+                # Map paced_plan segment shape → find_engaging_segments return shape
+                result = [{
+                    "start": s["start"],
+                    "duration": s["end"] - s["start"],
+                    "label": s.get("reason", "paced_segment"),
+                    "score": s.get("pacing_score", 0.7),
+                    "source": "intelligence_layer",
+                } for s in kept]
+                # Sort by pacing_score descending, cap at max_candidates
+                result.sort(key=lambda c: c.get("score", 0), reverse=True)
+                max_candidates = 5
+                if pacing and pacing in PACING_PRESETS:
+                    max_candidates = PACING_PRESETS[pacing]["max_candidates"]
+                return result[:max_candidates]
+
+    # Fallback: transcript-only heuristic (original behavior)
     if target_platform and target_platform in PLATFORM_SPECS:
         ps = PLATFORM_SPECS[target_platform]
         min_duration = ps["duration_min"]
@@ -325,8 +372,8 @@ def _find_engaging_segments(
         min_duration = pp["min_segment_duration"]
         max_duration = pp["max_segment_duration"]
 
-    segs = transcript.get("segments", [])
-    words = transcript.get("words", [])
+    segs = transcript.get("segments", []) if transcript else []
+    words = transcript.get("words", []) if transcript else []
     if not segs:
         return [{"start": 0, "duration": max_duration, "label": "full"}]
 
@@ -346,6 +393,7 @@ def _find_engaging_segments(
                 "label": text[:60],
                 "score": score,
                 "text": text,
+                "source": "transcript_heuristic",
             })
 
     candidates.sort(key=lambda c: c["score"], reverse=True)
@@ -393,7 +441,32 @@ def _find_key_moments(
     *,
     categories: list[str] | None = None,
     max_duration_per_moment: float = 45,
+    context: dict | None = None,
 ) -> list[dict]:
+    """Phase 5 wiring: if context has _hero_moments (from Phase 9 cross-modal
+    hero detector), use those as the PRIMARY signal — they fuse audio + visual +
+    semantic peaks. Falls back to transcript segment extraction when the
+    intelligence layer didn't run."""
+    # Intelligence layer first: cross-modal hero moments
+    if context is not None:
+        heroes = context.get("_hero_moments")
+        if heroes:
+            result = []
+            for h in heroes:
+                if h.get("level", 0) >= 2:  # level 2+ = double or triple co-occurrence
+                    dur = h["end"] - h["start"]
+                    result.append({
+                        "start": h["start"],
+                        "duration": min(dur, max_duration_per_moment),
+                        "label": f"{h.get('label', 'hero')}_{h.get('level', 0)}",
+                        "score": h.get("geometric_mean", 0.5),
+                        "source": "intelligence_layer",
+                        "reasoning": h.get("fusion_reasoning", "")[:100],
+                    })
+            if result:
+                result.sort(key=lambda c: c.get("score", 0), reverse=True)
+                return result[:10]
+    # Fallback: transcript-based extraction
     if transcript:
         segs = transcript.get("segments", [])
         return [{"start": s["start"], "duration": min(s["end"] - s["start"], max_duration_per_moment), "label": s.get("text", "")[:40]} for s in segs[:10]]
@@ -406,7 +479,46 @@ def _find_action_moments(
     min_duration: float = 3,
     max_duration: float = 15,
     min_energy_threshold: float = 0.6,
+    context: dict | None = None,
 ) -> list[dict]:
+    """Phase 5 wiring: if context has _hero_moments with level ≥ 2 (cross-modal
+    peak co-occurrence), use those as the PRIMARY signal for action moments —
+    they're where motion energy + audio onset + semantic salience all peak.
+    Also checks _slowmo_proposals (impact type) as a secondary intelligence signal.
+    Falls back to scene-boundary extraction when the intelligence layer didn't run."""
+    # Intelligence layer first: hero moments + slow-mo impact proposals
+    if context is not None:
+        heroes = context.get("_hero_moments") or []
+        slowmo = context.get("_slowmo_proposals") or []
+        intel_moments = []
+        # Hero moments with high motion (impact-type)
+        for h in heroes:
+            if h.get("level", 0) >= 2:
+                dur = h["end"] - h["start"]
+                if min_duration <= dur <= max_duration:
+                    intel_moments.append({
+                        "start": h["start"],
+                        "duration": dur,
+                        "label": f"hero_{h.get('level', 0)}",
+                        "source": "intelligence_layer",
+                        "score": h.get("geometric_mean", 0.5),
+                    })
+        # Slow-mo impact proposals (motion spike + audio onset)
+        for p in slowmo:
+            if p.get("moment_type") == "impact":
+                dur = p.get("duration", 0)
+                if min_duration <= dur <= max_duration:
+                    intel_moments.append({
+                        "start": p["start"],
+                        "duration": dur,
+                        "label": "impact_slowmo",
+                        "source": "intelligence_layer",
+                        "score": 0.9,
+                    })
+        if intel_moments:
+            intel_moments.sort(key=lambda c: c.get("score", 0), reverse=True)
+            return intel_moments[:15]
+    # Fallback: scene-boundary extraction
     if not scenes:
         return [{"start": 0, "duration": max_duration, "label": "action"}]
     candidates = []
@@ -416,7 +528,7 @@ def _find_action_moments(
         if i + 1 < len(scenes):
             dur = min(scenes[i + 1].get("timestamp", t + max_duration) - t, max_duration)
         if dur >= min_duration:
-            candidates.append({"start": t, "duration": dur, "label": f"action_{i}"})
+            candidates.append({"start": t, "duration": dur, "label": f"action_{i}", "source": "scene_heuristic"})
     return candidates[:15] if candidates else [{"start": 0, "duration": max_duration, "label": "action"}]
 
 
@@ -786,9 +898,21 @@ def _execute_step(step: dict, context: dict, input_path: str, output_dir: str) -
             raise ValueError(f"unknown music tool: {fn}")
         result = caller(**params)
     elif tool.startswith("recipe."):
-        result = _call_tool(tool, params)
+        # Phase 5 wiring: inject context-produced inputs (transcript/chapters/scenes)
+        # that earlier steps output but recipes don't always pass via $vars.
+        if tool in ("recipe.find_engaging_segments", "recipe.find_key_moments",
+                     "recipe.segment_by_topic"):
+            if "transcript" not in params and context.get("transcript"):
+                params["transcript"] = context["transcript"]
+        if tool == "recipe.find_key_moments" and "scenes" not in params and context.get("scenes"):
+            params["scenes"] = context["scenes"]
+        if tool in ("recipe.find_action_moments", "recipe.find_best_shots"):
+            if "scenes" not in params and context.get("scenes"):
+                params["scenes"] = context["scenes"]
+        # Pass context through so find_* functions can consume _paced_plan / _hero_moments
+        result = _call_tool(tool, params, context=context)
     else:
-        result = _call_tool(tool or op, params)
+        result = _call_tool(tool or op, params, context=context)
 
     step_result = {
         "operation": op,
