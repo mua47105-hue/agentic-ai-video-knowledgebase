@@ -32,11 +32,16 @@ def probe_video(video_path: str, *,
 
     visual_result = None
     audio_result = None
+    semantic_result = None
 
-    with ThreadPoolExecutor(max_workers=2) as ex:
+    # Run all 3 probes in PARALLEL (was: visual+audio parallel, then semantic sequential)
+    # Semantic doesn't actually need duration from visual — Whisper reads audio directly.
+    # We pass duration=0 and re-aggregate per_second after all probes complete.
+    with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {
             ex.submit(probe_visual, video_path): "visual",
             ex.submit(probe_audio, video_path, separate_stems): "audio",
+            ex.submit(probe_semantic, video_path, 0, score_with_llm, llm_router): "semantic",
         }
         for future in as_completed(futures):
             label = futures[future]
@@ -45,16 +50,16 @@ def probe_video(video_path: str, *,
                     visual_result = future.result()
                 elif label == "audio":
                     audio_result = future.result()
+                elif label == "semantic":
+                    semantic_result = future.result()
             except Exception as e:
                 print(f"[probe] {label} probe failed: {e}", file=__import__("sys").stderr)
 
-    duration = visual_result.duration if visual_result else 0.0
-    try:
-        semantic_result = probe_semantic(video_path, duration, score_with_llm, llm_router)
-    except Exception as e:
-        print(f"[probe] semantic probe failed: {e}", file=__import__("sys").stderr)
+    if semantic_result is None:
         from kb.tools.probe_semantic import SemanticProfile
         semantic_result = SemanticProfile()
+
+    duration = visual_result.duration if visual_result else (audio_result.duration if audio_result else 0.0)
 
     per_second = _merge_per_second(visual_result, audio_result, semantic_result, duration)
 

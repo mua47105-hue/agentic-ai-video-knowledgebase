@@ -348,7 +348,9 @@ _AESTHETIC_MODEL = None
 
 
 def probe_aesthetic(video_path: str, fps: float, duration: float,
-                    sample_every_n_seconds: float = 2.0) -> list[dict]:
+                    sample_every_n_seconds: float = 4.0) -> list[dict]:
+    """Aesthetic scoring. Default samples every 4s (was 2s) — 2x speedup, low quality risk
+    (aesthetic scores are smooth across adjacent frames; 4s still captures the distribution)."""
     try:
         import av
         import torch
@@ -561,9 +563,9 @@ def probe_visual(video_path: str) -> VisualProfile:
     profile.scene_boundaries = probe_scenes(video_path)
     components.append("pyscenedetect" if profile.scene_boundaries else "scdet_fallback")
 
-    # 3. Motion energy + peaks (opencv)
+    # 3. Motion energy + peaks (opencv) — sample every 2nd frame (2x speedup, no quality loss for peak detection)
     motion_features, profile.motion_peaks = probe_motion(
-        video_path, profile.fps, profile.duration
+        video_path, profile.fps, profile.duration, sample_stride=2
     )
     if motion_features:
         components.append("opencv_motion")

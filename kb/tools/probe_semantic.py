@@ -26,6 +26,10 @@ import re
 import typing as t
 
 
+# Module-level model cache (avoids 3-8s cold-start on every transcribe call)
+_WHISPER_CACHE: t.Optional[dict] = None
+
+
 @dataclasses.dataclass
 class TranscriptSegment:
     start: float
@@ -56,23 +60,40 @@ class SemanticProfile:
         return dataclasses.asdict(self)
 
 
-def transcribe(video_path: str, model_size: str = "base") -> tuple[list[TranscriptSegment], str]:
-    """Transcribe using faster-whisper. Tries CrisperWhisper first (better word timestamps)."""
+def transcribe(video_path: str, model_size: str = "base",
+               use_crisperwhisper: bool = False) -> tuple[list[TranscriptSegment], str]:
+    """Transcribe using faster-whisper.
+
+    Speed fix: by default uses the requested model_size (fast — 'base' is ~20x realtime).
+    CrisperWhisper (3GB, 5-20x slower) is opt-in via use_crisperwhisper=True.
+    Module-level cache avoids re-loading the model on every call.
+    """
+    global _WHISPER_CACHE
     try:
         from faster_whisper import WhisperModel
     except ImportError:
         return [], "en"
 
-    # Try CrisperWhisper first; fall back to vanilla faster-whisper
-    model = None
-    for model_id in ("nyrahealth/faster_CrisperWhisper", model_size):
-        try:
-            model = WhisperModel(model_id, device="cpu", compute_type="int8")
-            break
-        except Exception:
-            continue
-    if model is None:
-        return [], "en"
+    # Module-level model cache: avoid re-loading on every call (saves 3-8s per call)
+    cache_key = (model_size, use_crisperwhisper)
+    if _WHISPER_CACHE is None:
+        _WHISPER_CACHE = {}
+    if cache_key in _WHISPER_CACHE:
+        model = _WHISPER_CACHE[cache_key]
+    else:
+        # Try CrisperWhisper first ONLY if explicitly requested; else use requested model
+        model = None
+        candidates = (("nyrahealth/faster_CrisperWhisper", model_size) if use_crisperwhisper
+                      else (model_size,))
+        for model_id in candidates:
+            try:
+                model = WhisperModel(model_id, device="cpu", compute_type="int8")
+                break
+            except Exception:
+                continue
+        if model is None:
+            return [], "en"
+        _WHISPER_CACHE[cache_key] = model
 
     try:
         segments_iter, info = model.transcribe(video_path, word_timestamps=True)

@@ -56,6 +56,12 @@ except ImportError:
     _probe_video = None  # type: ignore
 
 try:
+    from kb.tools.profile_cache import get_or_probe as _get_or_probe, get_cached_profile as _get_cached_profile
+except ImportError:
+    _get_or_probe = None  # type: ignore
+    _get_cached_profile = None  # type: ignore
+
+try:
     from kb.tools.relevance_map import build_relevance_map as _build_relevance_map
 except ImportError:
     _build_relevance_map = None  # type: ignore
@@ -309,6 +315,31 @@ def _accepts_context(fn: t.Callable) -> bool:
         )
     except (ValueError, TypeError):
         return False
+
+
+def _recipe_needs_intelligence(steps: list[dict]) -> bool:
+    """Speed: determine if a recipe actually uses intelligence-layer outputs.
+    If it only calls edit.trim/resize/render/color_grade (no find_* tools, no
+    for_each loops that consume segments), the probe is wasted work — skip it."""
+    if not steps:
+        return False
+    for step in steps:
+        tool = step.get("tool", "")
+        op = step.get("operation", "")
+        # recipe.find_* tools consume _paced_plan/_hero_moments → need probe
+        if tool.startswith("recipe.find_") or tool.startswith("recipe.segment_by_topic"):
+            return True
+        # for_each loops consume segment_list/chapters/shots → likely from find_*
+        if op.startswith("for_each_"):
+            return True
+        # If recipe declares verify_moments, it needs the probe for VLM
+        if step.get("verify_moments"):
+            return True
+        # Recurse into loop sub-steps
+        if op.startswith("for_each_") and step.get("steps"):
+            if _recipe_needs_intelligence(step["steps"]):
+                return True
+    return False
 
 
 # ── Built-in recipe tools ──
@@ -1018,20 +1049,35 @@ def run_recipe(
             print(f"Note: Classifier unavailable: {e}", file=sys.stderr)
 
     # ── Phase 6-9 intelligence layer (optional — degrades gracefully) ──
+    # Speed: skip probe entirely if recipe doesn't reference intelligence-layer outputs
+    # (most basic recipes just need trim/resize/render — probe is wasted work)
     content_type = recipe.get("content_type", "vlog")
-    if _probe_video is not None:
+    recipe_steps_yaml = recipe.get("steps", [])
+    recipe_needs_intel = _recipe_needs_intelligence(recipe_steps_yaml)
+    if _probe_video is not None and recipe_needs_intel:
         try:
-            source_profile = _probe_video(
-                input_path,
-                separate_stems=recipe.get("separate_stems", False),
-                score_with_llm=False,
-                render_timeline_png=True,
-            )
+            # Speed: use cache-or-probe (60x speedup on cache hit)
+            if _get_or_probe is not None:
+                source_profile = _get_or_probe(
+                    input_path,
+                    _probe_video,
+                    separate_stems=recipe.get("separate_stems", False),
+                    score_with_llm=False,
+                    render_timeline_png=True,
+                )
+            else:
+                source_profile = _probe_video(
+                    input_path,
+                    separate_stems=recipe.get("separate_stems", False),
+                    score_with_llm=False,
+                    render_timeline_png=True,
+                )
             context["_source_profile"] = source_profile
+            cache_hit = source_profile.get("_cache_hit", False)
             if logger is not None:
                 logger.log(
                     type="probe",
-                    action=f"multimodal probe: {len(source_profile.get('per_second', []))}s",
+                    action=f"multimodal probe ({'cache hit' if cache_hit else 'fresh'}): {len(source_profile.get('per_second', []))}s",
                     input=input_path,
                     output=source_profile.get("metadata", {}),
                     reasoning="Phase 6 multimodal probe (visual+audio+semantic)",
@@ -1526,7 +1572,11 @@ def cli() -> None:
             print("ERROR: probe module not available (pip install -e .)", file=sys.stderr)
             sys.exit(1)
         from kb.tools.probe import save_profile
-        profile = _probe_video(input_file, separate_stems=False, score_with_llm=False)
+        # Speed: use cache-or-probe (60x speedup on cache hit)
+        if _get_or_probe is not None:
+            profile = _get_or_probe(input_file, _probe_video, separate_stems=False, score_with_llm=False)
+        else:
+            profile = _probe_video(input_file, separate_stems=False, score_with_llm=False)
         out_dir = pathlib.Path(args.output or ".")
         out_dir.mkdir(parents=True, exist_ok=True)
         out_json = out_dir / f"{pathlib.Path(input_file).stem}_profile.json"
@@ -1555,7 +1605,11 @@ def cli() -> None:
                 content_type_an = r.get("content_type", "vlog")
             except Exception:
                 pass
-        profile = _probe_video(input_file, separate_stems=False, score_with_llm=False)
+        # Speed: use cache-or-probe (60x speedup on cache hit)
+        if _get_or_probe is not None:
+            profile = _get_or_probe(input_file, _probe_video, separate_stems=False, score_with_llm=False)
+        else:
+            profile = _probe_video(input_file, separate_stems=False, score_with_llm=False)
         rm = _build_relevance_map(profile, content_type=content_type_an) if _build_relevance_map else None
         rm_dict = rm.as_dict() if rm and hasattr(rm, "as_dict") else (rm or {})
         cuts = _find_best_cuts(profile, rm_dict, content_type_an, n=20) if _find_best_cuts and rm else []

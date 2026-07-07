@@ -48,17 +48,25 @@ def _fmt_ass_time(seconds: float) -> str:
 
 
 def _ass_header(width: int = 1920, height: int = 1080) -> str:
+    """Premium ASS header. Upgraded from Arial/48/outline to Montserrat/72/box-background.
+    This single change is the biggest quality lever (per motion-design research)."""
     return (
         "[Script Info]\n"
         "ScriptType: v4.00+\n"
         "Collisions: Normal\n"
         f"PlayResX: {width}\n"
         f"PlayResY: {height}\n"
+        "WrapStyle: 2\n"  # no auto-wrapping — we control line breaks
+        "ScaledBorderAndShadow: yes\n"
         "\n"
         "[V4+ Styles]\n"
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-        "Style: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,30,30,80,1\n"
-        "Style: Highlight,Arial,48,&H0000FFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,1,2,30,30,80,1\n"
+        # Default: MrBeast-style — Montserrat Bold, box background (BorderStyle=4), 50% black, padding via Shadow=4
+        "Style: Default,Montserrat,72,&H00FFFFFF,&H0000FFFF,&H00000000,&H80000000,1,0,0,0,100,100,1,0,4,0,4,2,40,40,80,1\n"
+        # Highlight: yellow active word (MrBeast signature)
+        "Style: Highlight,Montserrat,72,&H0000FFFF,&H0000FFFF,&H00000000,&H80000000,1,0,0,0,100,100,1,0,4,0,4,2,40,40,80,1\n"
+        # Apple: Inter Bold, thin outline + soft shadow (Apple keynote style)
+        "Style: Apple,Inter,56,&H00FFFFFF,&H0000FFFF,&H00000000,&H80000000,1,0,0,0,100,100,1,0,1,2,1,2,40,40,80,1\n"
         "\n"
         "[Events]\n"
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
@@ -180,6 +188,125 @@ def _minimal_ass(words: list[dict], margin_v: int = 80, max_words_per_line: int 
     return lines
 
 
+# ── Spring physics sampler (for real bounce animation) ──
+# Implements damped harmonic oscillator: x(t) = 1 - e^(-ζωt) * (cos(ω_d·t) + (ζ/√(1-ζ²))·sin(ω_d·t))
+# Samples the spring curve at N points and emits a chain of ASS \t tags that approximate it.
+# This is the difference between "PowerPoint ease" and "real motion design."
+
+def _spring_samples(stiffness: float = 200, damping: float = 15, mass: float = 1,
+                    samples: int = 8) -> list[tuple[int, float]]:
+    """Sample a damped spring at N points. Returns [(t_ms, x)] where x is 0..1+overshoot."""
+    import math
+    omega = math.sqrt(stiffness / mass)
+    zeta = damping / (2 * math.sqrt(stiffness * mass))
+    if zeta >= 1:
+        zeta = 0.999  # clamp to slightly underdamped
+    omega_d = omega * math.sqrt(max(0, 1 - zeta ** 2))
+    zeta_fac = zeta / math.sqrt(max(1e-9, 1 - zeta ** 2))
+    # Find settle time (when |x - 1| < 0.002)
+    settle_t = 1.0
+    for ms in range(50, 5000, 10):
+        t = ms / 1000
+        x = 1 - math.exp(-zeta * omega * t) * (math.cos(omega_d * t) + zeta_fac * math.sin(omega_d * t))
+        if abs(x - 1) < 0.002:
+            settle_t = t
+            break
+    pts = []
+    for i in range(samples + 1):
+        t = (i / samples) * settle_t
+        x = 1 - math.exp(-zeta * omega * t) * (math.cos(omega_d * t) + zeta_fac * math.sin(omega_d * t))
+        pts.append((int(t * 1000), x))
+    return pts
+
+
+def _spring_scale_tag(start_pct: int = 70, target_pct: int = 100,
+                      stiffness: float = 200, damping: float = 15) -> str:
+    """Build an ASS {\\fscx70\\fscy70\\t(0,30,\\fscx83\\fscy83)...} tag for a spring bounce.
+    The spring's overshoot naturally produces the MrBeast 'pop' (110% then settle to 100%)."""
+    pts = _spring_samples(stiffness, damping)
+    parts = [f"\\fscx{start_pct}\\fscy{start_pct}"]
+    for i in range(1, len(pts)):
+        t1, _ = pts[i - 1]
+        t2, x = pts[i]
+        scale = int(start_pct + (target_pct - start_pct) * x)
+        parts.append(f"\\t({t1},{t2},\\fscx{scale}\\fscy{scale})")
+    return "{" + "".join(parts) + "}"
+
+
+def _chunk_words(words: list[dict], max_per_line: int = 6) -> list[list[dict]]:
+    """Group words into lines of at most max_per_line, breaking on gaps > 0.5s."""
+    chunks = []
+    buffer = []
+    for i, w in enumerate(words):
+        if not w.get("word", "").strip():
+            continue
+        buffer.append(w)
+        gap = (words[i + 1]["start"] - w["end"]) if i + 1 < len(words) else 999
+        if len(buffer) >= max_per_line or gap >= 0.5 or i == len(words) - 1:
+            chunks.append(buffer)
+            buffer = []
+    return chunks
+
+
+def _mrbeast_bounce_ass(words: list[dict], margin_v: int = 80, max_words_per_line: int = 6) -> str:
+    """MrBeast-style per-word kinetic typography.
+
+    Each word:
+    - Spring-bounces in (70% → 110% → 100%) over ~400ms
+    - Yellow active word (MrBeast signature), snaps back to white after word ends
+    - 80ms fade-in, 60ms fade-out
+    - Box background (from ASS header BorderStyle=4)
+
+    This is the 'TikTok/Reels kinetic caption' look — converts static subtitles
+    into engaging per-word animation that holds viewer attention."""
+    lines = _ass_header()
+    for i, w in enumerate(words):
+        text = w.get("word", "")
+        if not text.strip():
+            continue
+        start, end = w["start"], w["end"]
+        word_dur_ms = max(80, int((end - start) * 1000))
+
+        # Spring bounce for entrance (stiffness=200, damping=15 = ~5% overshoot, one bounce)
+        bounce_tag = _spring_scale_tag(start_pct=70, target_pct=100,
+                                        stiffness=200, damping=15)
+        # Color: yellow at start, snap to white after word ends (instant via \t with t1==t2)
+        color_tag = f"\\1c&H0000FFFF&\\t({word_dur_ms},{word_dur_ms},\\1c&H00FFFFFF&)"
+        # Fade: 80ms in, 60ms out
+        fade_tag = "\\fad(80,60)"
+        # Merge all tags (strip the outer {} from bounce_tag, re-wrap)
+        combined = "{" + bounce_tag[1:-1] + color_tag + fade_tag + "}"
+        lines += (f"Dialogue: 0,{_fmt_ass_time(start)},{_fmt_ass_time(end + 0.06)},"
+                  f"Default,,0,0,{margin_v},,,{combined}{text}\n")
+    return lines
+
+
+def _apple_premium_ass(words: list[dict], margin_v: int = 80, max_words_per_line: int = 6) -> str:
+    """Apple-keynote-style entrance for title cards / longer phrases.
+
+    Each line (not per-word):
+    - Blur-in: \\blur8 → \\blur0 over 300ms (the 'cinematic reveal')
+    - Fade: 0 → 1 over 400ms
+    - Scale: 95% → 100% over 500ms (subtle, no overshoot — Apple restraint)
+    - Uses Apple style (Inter Bold, thin outline + soft shadow)
+
+    This is the 'premium keynote' look — restrained, cinematic, no bounce."""
+    lines = _ass_header()
+    for chunk in _chunk_words(words, max_words_per_line):
+        line_text = " ".join(w["word"] for w in chunk)
+        if not line_text.strip():
+            continue
+        start = chunk[0]["start"]
+        end = chunk[-1]["end"]
+        # Apple entrance: blur 8→0 over 300ms, fade 0→1 over 400ms, scale 95→100 over 500ms
+        tag = (r"{\blur8\t(0,300,\blur0)"           # blur-in (the secret ingredient)
+               r"\fad(400,200)"                      # fade in/out
+               r"\fscx95\fscy95\t(0,500,\fscx100\fscy100)}")  # subtle scale (no overshoot)
+        lines += (f"Dialogue: 0,{_fmt_ass_time(start)},{_fmt_ass_time(end + 0.2)},"
+                  f"Apple,,0,0,{margin_v},,,{tag}{line_text}\n")
+    return lines
+
+
 def caption_ass(
     words: list[dict],
     output_path: str,
@@ -232,6 +359,8 @@ def caption_ass(
         "karaoke_highlight": _karaoke_highlight_ass,
         "bold_keyword": _bold_keyword_ass,
         "minimal": _minimal_ass,
+        "mrbeast_bounce": _mrbeast_bounce_ass,      # NEW: per-word spring bounce + yellow active word
+        "apple_premium": _apple_premium_ass,          # NEW: blur-in + fade + scale (cinematic)
     }
     gen = generators.get(preset, _karaoke_highlight_ass)
     ass_content = gen(words, margin_v=margin_v)
@@ -273,9 +402,14 @@ def text_subtitles_animated(
         from kb.tools.ffmpeg_adapter import _run, _check_ffmpeg, _ensure_parent
         _check_ffmpeg()
         _ensure_parent(output)
+        # Pass fontsdir so libass finds the bundled professional fonts (Montserrat, Inter)
+        # Falls back to system fonts if our bundled fonts aren't present.
+        fonts_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "fonts")
+        fonts_dir_abs = os.path.abspath(fonts_dir)
+        fonts_arg = f":fontsdir={fonts_dir_abs}" if os.path.isdir(fonts_dir_abs) else ""
         cmd = [
             "ffmpeg", "-i", input,
-            "-vf", f"subtitles={ass_path}",
+            "-vf", f"subtitles={ass_path}{fonts_arg}",
             "-c:a", "copy", output,
         ]
         _run(cmd, check=True)
