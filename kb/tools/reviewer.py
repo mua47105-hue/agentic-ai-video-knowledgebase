@@ -212,7 +212,7 @@ def _score_audio(output_path: str, content_type: str) -> dict:
             except (ValueError, IndexError):
                 pass
             break
-    LUFS_TARGETS = {"vlog": -14, "social-short": -14, "podcast": -16, "tutorial": -16,
+    LUFS_TARGETS = {"vlog": -14, "social-short": -14, "short_form": -14, "podcast": -16, "tutorial": -16,
                     "cinematic": -23, "documentary": -16, "interview": -16,
                     "talking-head": -16, "music-video": -14, "event": -16}
     target = LUFS_TARGETS.get(content_type, -16)

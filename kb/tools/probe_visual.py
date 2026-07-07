@@ -140,9 +140,8 @@ def _probe_scenes_ffmpeg(video_path: str, threshold: float) -> list[float]:
 
 def probe_motion(video_path: str, fps: float, duration: float,
                  sample_stride: int = 1) -> tuple[list[dict], list[dict]]:
-    """Returns (per_frame_features, motion_peaks). Always available if opencv installed."""
+    """Returns (per_frame_features, motion_peaks). Falls back to cv2.VideoCapture if PyAV missing."""
     try:
-        import av
         import cv2
         import numpy as np
     except ImportError:
@@ -151,16 +150,54 @@ def probe_motion(video_path: str, fps: float, duration: float,
     features: list[dict] = []
     energies: list[float] = []
     timestamps: list[float] = []
-
-    try:
-        container = av.open(video_path)
-    except Exception:
-        return [], []
-
     prev_gray = None
     frame_idx = 0
+
+    # Try PyAV first (faster), fall back to cv2.VideoCapture (P1 #3 fix)
+    use_pyav = False
     try:
-        for frame in container.decode(video=0):
+        import av
+        use_pyav = True
+    except ImportError:
+        pass
+
+    if use_pyav:
+        try:
+            container = av.open(video_path)
+            for frame in container.decode(video=0):
+                if frame_idx % sample_stride != 0:
+                    frame_idx += 1
+                    continue
+                ts = frame_idx / fps if fps > 0 else 0.0
+                if ts > duration:
+                    break
+                try:
+                    img = frame.to_ndarray(format="bgr24")
+                    small = cv2.resize(img, (160, 90))
+                    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY).astype(np.float32)
+                    if prev_gray is not None:
+                        diff = np.abs(gray - prev_gray)
+                        energy = float(diff.mean())
+                        energies.append(energy)
+                        timestamps.append(ts)
+                        features.append({"timestamp": ts, "motion_energy": energy})
+                    prev_gray = gray
+                except Exception:
+                    pass
+                frame_idx += 1
+            container.close()
+        except Exception:
+            use_pyav = False  # fall through to cv2
+
+    if not use_pyav:
+        # Fallback: cv2.VideoCapture (P1 #3 fix — always available when opencv installed)
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            return [], []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
             if frame_idx % sample_stride != 0:
                 frame_idx += 1
                 continue
@@ -168,8 +205,7 @@ def probe_motion(video_path: str, fps: float, duration: float,
             if ts > duration:
                 break
             try:
-                img = frame.to_ndarray(format="bgr24")
-                small = cv2.resize(img, (160, 90))
+                small = cv2.resize(frame, (160, 90))
                 gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY).astype(np.float32)
                 if prev_gray is not None:
                     diff = np.abs(gray - prev_gray)
@@ -181,8 +217,7 @@ def probe_motion(video_path: str, fps: float, duration: float,
             except Exception:
                 pass
             frame_idx += 1
-    finally:
-        container.close()
+        cap.release()
 
     if not energies:
         return [], []
@@ -560,8 +595,18 @@ def probe_visual(video_path: str) -> VisualProfile:
         return profile
 
     # 2. Scene boundaries
+    # P3 #15 fix: correctly label which scene detection method actually ran
+    _scenedetect_available = False
+    try:
+        import scenedetect  # noqa
+        _scenedetect_available = True
+    except ImportError:
+        pass
     profile.scene_boundaries = probe_scenes(video_path)
-    components.append("pyscenedetect" if profile.scene_boundaries else "scdet_fallback")
+    if profile.scene_boundaries:
+        components.append("pyscenedetect" if _scenedetect_available else "scdet_fallback")
+    else:
+        components.append("scdet_fallback" if not _scenedetect_available else "pyscenedetect_no_scenes")
 
     # 3. Motion energy + peaks (opencv) — sample every 2nd frame (2x speedup, no quality loss for peak detection)
     motion_features, profile.motion_peaks = probe_motion(

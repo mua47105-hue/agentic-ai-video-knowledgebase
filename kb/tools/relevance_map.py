@@ -115,6 +115,33 @@ def build_relevance_map(source_profile: dict, content_type: str = "vlog",
     if not per_second_raw:
         return RelevanceMap()
 
+    # P1 #7 fix: Adaptive dead-zone threshold.
+    # If the fixed threshold is left at default (0.25), compute an adaptive one:
+    # dead_zone_threshold = max(0.15, avg_hero_score * 0.5)
+    # This ensures that for videos where all scores are low (no visual features),
+    # the bottom half of scores are still flagged as dead zones.
+    # For videos with high scores, the threshold stays at 0.25 (or higher).
+    if dead_zone_threshold == 0.25:
+        # Compute a preliminary score to determine the adaptive threshold
+        preliminary_scores = []
+        for ps in per_second_raw:
+            s = _dim_semantic(ps)
+            e = _dim_emotional(ps)
+            v = _dim_visual(ps, None)
+            a = _dim_audio(ps)
+            h = _hero_score(s, e, v, a)
+            preliminary_scores.append(h)
+        if preliminary_scores:
+            avg_h = sum(preliminary_scores) / len(preliminary_scores)
+            max_h = max(preliminary_scores)
+            # Adaptive: use the lower of the fixed threshold and avg*0.5
+            # This ensures dead zones are found even when all scores are low
+            adaptive = max(0.10, avg_h * 0.6)
+            if max_h < 0.3:
+                # Very low-energy content — use adaptive threshold (lower it)
+                dead_zone_threshold = adaptive
+            # else: keep the fixed 0.25 threshold (content has real signal)
+
     per_second: list[WindowScore] = []
     recent_window: list[dict] = []
 

@@ -6,9 +6,9 @@ Stronger signal than Phase 7's per-second geometric mean because it requires
 actual peak alignment, not just high average scores.
 
 Three fusion levels:
-  - Level 3 (TRIPLE): audio peak + visual peak + semantic salience within 0.5s
+  - Level 3 (TRIPLE): audio peak + visual peak + semantic salience within 1.0s
     → "hero_moment" (always keep, consider slow-mo)
-  - Level 2 (DOUBLE): two of three modalities peak within 0.5s
+  - Level 2 (DOUBLE): two of three modalities peak within 1.0s
     → "strong_moment" (keep, candidate for emphasis)
   - Level 1 (SINGLE): one modality peaks
     → "notable_moment" (consider keeping)
@@ -20,7 +20,7 @@ from __future__ import annotations
 
 
 def detect_hero_moments(source_profile: dict, relevance_map: dict,
-                        co_occurrence_window: float = 0.5) -> list[dict]:
+                        co_occurrence_window: float = 1.0) -> list[dict]:
     """Detect cross-modal hero moments by fusing peaks from audio, visual, semantic."""
     audio_peaks = _extract_audio_peaks(source_profile)
     visual_peaks = _extract_visual_peaks(source_profile)

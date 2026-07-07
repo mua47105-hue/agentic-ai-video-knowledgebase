@@ -24,8 +24,10 @@ def probe_video(video_path: str, *,
                 separate_stems: bool = False,
                 score_with_llm: bool = False,
                 llm_router: t.Optional[object] = None,
-                render_timeline_png: bool = True) -> dict:
-    """Run all probes in parallel, merge into SourceProfile dict."""
+                render_timeline_png: bool = False) -> dict:
+    """Run all probes in parallel, merge into SourceProfile dict.
+    P2 #9 fix: render_timeline_png defaults to False (was True — caused OOM in constrained environments).
+    P2 #8 fix: memory check — falls back to sequential if available RAM < 1GB."""
     from kb.tools.probe_visual import probe_visual
     from kb.tools.probe_audio import probe_audio
     from kb.tools.probe_semantic import probe_semantic
@@ -34,26 +36,50 @@ def probe_video(video_path: str, *,
     audio_result = None
     semantic_result = None
 
-    # Run all 3 probes in PARALLEL (was: visual+audio parallel, then semantic sequential)
-    # Semantic doesn't actually need duration from visual — Whisper reads audio directly.
-    # We pass duration=0 and re-aggregate per_second after all probes complete.
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        futures = {
-            ex.submit(probe_visual, video_path): "visual",
-            ex.submit(probe_audio, video_path, separate_stems): "audio",
-            ex.submit(probe_semantic, video_path, 0, score_with_llm, llm_router): "semantic",
-        }
-        for future in as_completed(futures):
-            label = futures[future]
-            try:
-                if label == "visual":
-                    visual_result = future.result()
-                elif label == "audio":
-                    audio_result = future.result()
-                elif label == "semantic":
-                    semantic_result = future.result()
-            except Exception as e:
-                print(f"[probe] {label} probe failed: {e}", file=__import__("sys").stderr)
+    # P2 #8: Memory check — if available RAM < 1GB, run probes sequentially
+    run_parallel = True
+    try:
+        import psutil
+        avail_mb = psutil.virtual_memory().available / (1024 * 1024)
+        if avail_mb < 1024:
+            run_parallel = False
+            print(f"[probe] Low memory ({avail_mb:.0f}MB available) — running probes sequentially", file=__import__("sys").stderr)
+    except ImportError:
+        pass  # psutil not installed — assume enough memory, run parallel
+
+    if run_parallel:
+        # Run all 3 probes in PARALLEL
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            futures = {
+                ex.submit(probe_visual, video_path): "visual",
+                ex.submit(probe_audio, video_path, separate_stems): "audio",
+                ex.submit(probe_semantic, video_path, 0, score_with_llm, llm_router): "semantic",
+            }
+            for future in as_completed(futures):
+                label = futures[future]
+                try:
+                    if label == "visual":
+                        visual_result = future.result()
+                    elif label == "audio":
+                        audio_result = future.result()
+                    elif label == "semantic":
+                        semantic_result = future.result()
+                except Exception as e:
+                    print(f"[probe] {label} probe failed: {e}", file=__import__("sys").stderr)
+    else:
+        # Sequential fallback (P2 #8 fix — prevents OOM on constrained machines)
+        try:
+            visual_result = probe_visual(video_path)
+        except Exception as e:
+            print(f"[probe] visual probe failed: {e}", file=__import__("sys").stderr)
+        try:
+            audio_result = probe_audio(video_path, separate_stems)
+        except Exception as e:
+            print(f"[probe] audio probe failed: {e}", file=__import__("sys").stderr)
+        try:
+            semantic_result = probe_semantic(video_path, 0, score_with_llm, llm_router)
+        except Exception as e:
+            print(f"[probe] semantic probe failed: {e}", file=__import__("sys").stderr)
 
     if semantic_result is None:
         from kb.tools.probe_semantic import SemanticProfile

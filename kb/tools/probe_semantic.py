@@ -60,6 +60,76 @@ class SemanticProfile:
         return dataclasses.asdict(self)
 
 
+def _has_speech(video_path: str) -> bool:
+    """P1 #5 fix: Energy-based speech pre-check.
+    Samples 3 random 2-second windows, computes RMS energy variance.
+    If variance is very low (constant noise like engine/wind), returns False — skip Whisper.
+    If variance is high (speech has pauses + bursts), returns True."""
+    try:
+        import subprocess
+        import tempfile
+        import os
+        import wave
+        import struct
+
+        # Extract a 6-second sample from the middle of the video
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", video_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        duration = float(result.stdout.strip() or 0)
+        if duration < 2:
+            return True  # too short to check — assume speech
+
+        # Extract 6 seconds from middle as 8kHz mono WAV
+        start = max(0, duration / 2 - 3)
+        tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        tmp.close()
+        subprocess.run(
+            ["ffmpeg", "-y", "-ss", str(start), "-t", "6", "-i", video_path,
+             "-vn", "-ac", "1", "-ar", "8000", "-c:a", "pcm_s16le", tmp.name],
+            capture_output=True, timeout=30,
+        )
+
+        # Read samples
+        with wave.open(tmp.name) as wf:
+            frames = wf.readframes(wf.getnframes())
+            samples = struct.unpack(f'<{len(frames)//2}h', frames)
+
+        os.unlink(tmp.name)
+
+        if len(samples) < 8000:
+            return True  # not enough data — assume speech
+
+        # Compute RMS energy for 3 random 2-second windows
+        import math
+        window_size = 16000  # 2 seconds at 8kHz
+        energies = []
+        for offset in [0, len(samples) // 3, len(samples) * 2 // 3]:
+            if offset + window_size > len(samples):
+                offset = len(samples) - window_size
+            window = samples[offset:offset + window_size]
+            rms = math.sqrt(sum(s ** 2 for s in window) / len(window))
+            energies.append(rms)
+
+        if not energies:
+            return True
+
+        # Speech has HIGH variance (pauses + bursts). Engine noise has LOW variance.
+        mean_e = sum(energies) / len(energies)
+        if mean_e == 0:
+            return False  # silence — no speech
+        variance = sum((e - mean_e) ** 2 for e in energies) / len(energies)
+        cv = (variance ** 0.5) / mean_e  # coefficient of variation
+
+        # CV > 0.3 means significant energy variation → likely speech
+        # CV < 0.15 means uniform energy → likely constant noise (engine, wind)
+        return cv > 0.15
+    except Exception:
+        return True  # if pre-check fails, run Whisper (safe default)
+
+
 def transcribe(video_path: str, model_size: str = "base",
                use_crisperwhisper: bool = False) -> tuple[list[TranscriptSegment], str]:
     """Transcribe using faster-whisper.
@@ -67,8 +137,14 @@ def transcribe(video_path: str, model_size: str = "base",
     Speed fix: by default uses the requested model_size (fast — 'base' is ~20x realtime).
     CrisperWhisper (3GB, 5-20x slower) is opt-in via use_crisperwhisper=True.
     Module-level cache avoids re-loading the model on every call.
+    P1 #5 fix: speech detection gate — skips Whisper on non-speech audio (engine/wind/music).
     """
     global _WHISPER_CACHE
+
+    # P1 #5: Speech detection gate — skip Whisper on non-speech audio
+    if not _has_speech(video_path):
+        return [], "en"
+
     try:
         from faster_whisper import WhisperModel
     except ImportError:

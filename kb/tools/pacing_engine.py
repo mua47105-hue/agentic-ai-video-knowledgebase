@@ -32,6 +32,13 @@ PACING_PROFILES: dict[str, dict] = {
         "hook_window": 1.5, "hook_requires": ["verbal", "visual"],
         "dead_zone_max": 2.0, "hero_protection": True,
     },
+    # alias: short_form (used in recipes) maps to same profile as social-short
+    "short_form": {
+        "pattern_interrupt_min": 3.0, "pattern_interrupt_max": 5.0,
+        "shot_length_mean": 4.0, "shot_length_std": 1.5,
+        "hook_window": 1.5, "hook_requires": ["verbal", "visual"],
+        "dead_zone_max": 2.0, "hero_protection": True,
+    },
     "podcast": {
         "pattern_interrupt_min": 30.0, "pattern_interrupt_max": 90.0,
         "shot_length_mean": 60.0, "shot_length_std": 30.0,

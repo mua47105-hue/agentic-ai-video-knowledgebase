@@ -208,17 +208,34 @@ def probe_prosody_emotion(audio_wav: str, segment_duration: float = 3.0) -> list
 
 
 def probe_loudness(video_path: str) -> tuple[float, float, float]:
-    """Returns (integrated_lufs, loudness_range, true_peak_db). ffmpeg ebur128."""
+    """Returns (integrated_lufs, loudness_range, true_peak_db).
+    P1 #4 fix: uses loudnorm=print_format=json instead of ebur128 text parsing (more reliable on ffmpeg 7.x)."""
     try:
         result = subprocess.run(
             ["ffmpeg", "-i", video_path, "-hide_banner", "-nostats",
-             "-filter_complex", "ebur128=peak=true", "-f", "null", "-"],
+             "-af", "loudnorm=print_format=json", "-f", "null", "-"],
             capture_output=True, text=True, timeout=600,
         )
+        # loudnorm JSON output is in stderr, after the normal ffmpeg output
+        stderr = result.stderr
+        # Find the JSON block in stderr
+        json_start = stderr.rfind("{")
+        json_end = stderr.rfind("}") + 1
+        if json_start >= 0 and json_end > json_start:
+            try:
+                import json
+                loudness_json = json.loads(stderr[json_start:json_end])
+                integrated = float(loudness_json.get("input_i", -70.0))
+                lra = float(loudness_json.get("input_lra", 0.0))
+                tp = float(loudness_json.get("input_tp", -70.0))
+                return integrated, lra, tp
+            except (json.JSONDecodeError, ValueError, KeyError):
+                pass
+        # Fallback: try ebur128 text parsing (old method)
         integrated = -70.0
         lra = 0.0
         tp = -70.0
-        for line in result.stderr.split("\n"):
+        for line in stderr.split("\n"):
             if "I:" in line and "LUFS" in line:
                 try:
                     parts = line.split()

@@ -30,6 +30,13 @@ IMPLICIT_INTENTS_BY_CONTENT_TYPE: dict[str, list[str]] = {
         "aggressive pacing (-14 LUFS)",
         "kinetic text captions",
     ],
+    "short_form": [  # alias for social-short
+        "hook in first 1.5s with verbal+visual interrupt",
+        "maintain pattern interrupt every 3-5s",
+        "vertical 9:16 framing",
+        "aggressive pacing (-14 LUFS)",
+        "kinetic text captions",
+    ],
     "podcast": [
         "remove silences and filler words",
         "extract 3 best moments as shorts",

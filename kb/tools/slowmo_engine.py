@@ -32,8 +32,13 @@ SFX = {
 
 
 def find_slowmo_moments(source_profile: dict, relevance_map: dict,
-                        max_per_minute: int = 2) -> list[dict]:
-    """Find candidate slow-mo moments in the video."""
+                        max_per_minute: int = 2,
+                        motion_only_threshold: float = 3.0) -> list[dict]:
+    """Find candidate slow-mo moments in the video.
+
+    P1 #6 fix: relaxed co-occurrence window from 0.3s to 1.0s (real-world footage has
+    motion/sound offset). Added motion_only_threshold: if sigma >= 3.0, propose slow-mo
+    even WITHOUT audio onset (strong motion alone is sufficient evidence of impact)."""
     duration = source_profile.get("metadata", {}).get("duration", 0)
     tempo = source_profile.get("audio", {}).get("tempo", 120.0) or 120.0
     downbeats = source_profile.get("audio", {}).get("downbeats", [])
@@ -46,8 +51,11 @@ def find_slowmo_moments(source_profile: dict, relevance_map: dict,
         if sigma < 2.0:
             continue
         onsets = source_profile.get("audio", {}).get("onsets", [])
-        has_onset = any(abs(float(o) - ts) < 0.3 for o in onsets)
-        if has_onset:
+        # P1 #6: relaxed from 0.3s to 1.0s
+        has_onset = any(abs(float(o) - ts) < 1.0 for o in onsets)
+        # P1 #6: motion-only trigger — sigma >= motion_only_threshold doesn't need audio
+        motion_only = sigma >= motion_only_threshold
+        if has_onset or motion_only:
             bar_duration = 4 * (60.0 / tempo) if tempo > 0 else 2.0
             nearest_bar = _find_nearest_bar(ts, downbeats, bar_duration)
             start = nearest_bar if nearest_bar is not None else ts
@@ -62,8 +70,10 @@ def find_slowmo_moments(source_profile: dict, relevance_map: dict,
                 "sfx": SFX["impact"].copy(),
                 "beat_snapped": nearest_bar is not None,
                 "nearest_bar_ts": nearest_bar,
-                "reasoning": f"motion peak σ={sigma:.2f} + audio onset at t={ts:.2f}s"
-                             + (f"; snapped to bar at {nearest_bar:.2f}s" if nearest_bar is not None else ""),
+                "reasoning": (f"motion peak σ={sigma:.2f}" +
+                              (f" + audio onset" if has_onset else " (motion-only trigger)") +
+                              f" at t={ts:.2f}s"
+                              + (f"; snapped to bar at {nearest_bar:.2f}s" if nearest_bar is not None else "")),
             })
 
     # Reveal moments
@@ -125,6 +135,8 @@ def find_slowmo_moments(source_profile: dict, relevance_map: dict,
     proposals.sort(key=lambda p: p["start"])
     if max_per_minute > 0 and duration > 0:
         max_total = int((duration / 60.0) * max_per_minute)
+        # Fix: ensure at least 1 proposal for short videos (< 30s with max_per_minute=2 = 0.67 → 0)
+        max_total = max(1, max_total)
         if len(proposals) > max_total:
             proposals.sort(key=lambda p: (
                 p.get("sfx", {}).get("type") == "sub_bass",
