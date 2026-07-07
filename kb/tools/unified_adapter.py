@@ -13,7 +13,11 @@ Architecture:
     - ffmpeg_adapter provides 9 audited functions (ours is better) +
       20 unique functions (J/L-cuts, scopes, project files, quality, etc.)
     - Hard Rules enforced at the bridge level
-    - Graceful degradation if mcp_video is not installed
+    - Graceful degradation: when mcp_video is not installed, core operations
+      (info, trim, resize, speed, color_grade, stabilize, detect_scenes,
+      text_subtitles, extract_audio, reverse) fall back to ffmpeg_adapter.
+      Operations without an FFmpeg equivalent return {"error": "...", "fallback_available": False}
+      instead of crashing.
 """
 
 from __future__ import annotations
