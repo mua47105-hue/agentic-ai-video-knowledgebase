@@ -31,34 +31,50 @@ def generate_plan(source_profile: dict, relevance_map: dict,
                   content_type: str, intents: list[str],
                   memory_hints: list[dict],
                   plan_llm_model: str = "ollama/qwen2.5-coder:7b",
-                  max_critique_rounds: int = 3) -> dict:
-    """Generate an EditPlan via LLM (with critique-and-revise), or fallback to rule-based."""
+                  max_critique_rounds: int = 3,
+                  editing_blueprint: t.Optional[dict] = None) -> dict:
+    """Generate an EditPlan via LLM (with critique-and-revise), or fallback to rule-based.
+
+    Phase 5 additions:
+    - Uses LLMRouter (CutClaw pattern) for per-task model routing
+    - Accepts an editing_blueprint (Crayotter's Editing Research sub-phase) as prior input
+    - Produces a storyboard as a first-class artifact (Project Montage pattern)
+    """
     from kb.tools.plan_critic import critique_plan
+    from kb.tools.llm_router import get_router
+
+    router = get_router()
 
     # Try LLM-based planning
-    if _llm_available():
+    if router.available():
         plan_dict = None
         critic_result = None
         for round_num in range(1, max_critique_rounds + 1):
             prompt = _build_prompt(source_profile, relevance_map, cut_points,
                                    paced_plan, slowmo_proposals, music_sync_plan,
-                                   content_type, intents, memory_hints, critic_result)
-            plan_dict = _call_plan_llm(prompt, plan_llm_model)
+                                   content_type, intents, memory_hints, critic_result,
+                                   editing_blueprint)
+            # Use router for plan task (routes to best available model)
+            plan_dict = _call_plan_llm_via_router(prompt, router)
             if not plan_dict:
                 break
             critic_result = critique_plan(plan_dict, source_profile, relevance_map, content_type)
             critic_result["rounds"] = round_num
             if critic_result["approved"]:
                 plan_dict["plan_critic_result"] = critic_result.__dict__ if hasattr(critic_result, "__dict__") else critic_result
+                plan_dict["editing_blueprint"] = editing_blueprint
                 return plan_dict
         if plan_dict is not None:
             plan_dict["plan_critic_result"] = critic_result.__dict__ if hasattr(critic_result, "__dict__") else critic_result
+            plan_dict["editing_blueprint"] = editing_blueprint
             return plan_dict
 
     # Fallback: rule-based plan from Phase 6-8 outputs
-    return _fallback_plan(source_profile, relevance_map, cut_points, paced_plan,
+    plan = _fallback_plan(source_profile, relevance_map, cut_points, paced_plan,
                           slowmo_proposals, music_sync_plan, content_type, intents,
                           memory_hints)
+    plan["editing_blueprint"] = editing_blueprint
+    return plan
 
 
 def _llm_available() -> bool:
@@ -71,7 +87,7 @@ def _llm_available() -> bool:
 
 def _build_prompt(source_profile, relevance_map, cut_points, paced_plan,
                   slowmo_proposals, music_sync_plan, content_type, intents,
-                  memory_hints, previous_critique):
+                  memory_hints, previous_critique, editing_blueprint=None):
     meta = source_profile.get("metadata", {})
     audio = source_profile.get("audio", {})
     semantic = source_profile.get("semantic", {})
@@ -82,6 +98,15 @@ def _build_prompt(source_profile, relevance_map, cut_points, paced_plan,
             feedback += f"- [{v['severity']}] {v['rule']}: {v['detail']}\n"
         for s in previous_critique.get("suggestions", []):
             feedback += f"- SUGGESTION: {s}\n"
+    blueprint_section = ""
+    if editing_blueprint:
+        blueprint_section = (
+            f"\nEditing Blueprint (from Editing Research sub-phase):\n"
+            f"- Narrative: {editing_blueprint.get('narrative_strategy', 'N/A')}\n"
+            f"- Visual: {editing_blueprint.get('visual_strategy', 'N/A')}\n"
+            f"- Pacing: {editing_blueprint.get('pacing_strategy', 'N/A')}\n"
+            f"- Narration: {editing_blueprint.get('narration_strategy', 'N/A')}\n"
+        )
     from kb.tools.plan_critic import HARD_RULES_CHECKABLE
     return (
         "You are an expert video editing planner. Produce a complete EditPlan as JSON.\n\n"
@@ -95,13 +120,19 @@ def _build_prompt(source_profile, relevance_map, cut_points, paced_plan,
         f"Slow-mo proposals: {json.dumps(slowmo_proposals[:5], default=str)}\n"
         f"Music sync: {json.dumps({'sections': (music_sync_plan.get('structure') or {}).get('sections', []), 'aligned_cuts': music_sync_plan.get('aligned_cuts', [])[:5]}, default=str)}\n"
         f"Memory hints: {json.dumps(memory_hints[:5], default=str)}\n"
-        f"Intents: {intents}\n\n"
+        f"Intents: {intents}\n"
+        f"{blueprint_section}\n"
         "Hard Rules:\n" + "\n".join(f"- {r['id']}: {r['description']}" for r in HARD_RULES_CHECKABLE) + "\n\n"
         "Return ONLY a JSON object: {\"steps\": [{\"operation\": str, \"tool\": \"edit.X\", \"params\": {}, \"output\": str, \"reasoning\": str}], "
-        "\"storyboard\": \"markdown\", \"assumptions\": {\"fps\": N, \"has_audio\": bool, \"estimated_output_duration\": N}, "
+        "\"storyboard\": \"markdown scene-by-scene visual description\", \"assumptions\": {\"fps\": N, \"has_audio\": bool, \"estimated_output_duration\": N}, "
         "\"intents\": [str], \"estimated_cost\": {\"whisper_seconds\": N, \"vlm_calls\": N, \"ffmpeg_seconds\": N}}"
         + feedback
     )
+
+
+def _call_plan_llm_via_router(prompt: str, router) -> t.Optional[dict]:
+    """Call LLM via the router (CutClaw per-task routing pattern)."""
+    return router.route_json("plan", prompt, temperature=0.4, max_tokens=8000, timeout=300)
 
 
 def _call_plan_llm(prompt: str, model: str) -> t.Optional[dict]:

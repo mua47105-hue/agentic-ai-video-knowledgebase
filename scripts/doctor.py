@@ -121,6 +121,10 @@ def run_all() -> list[Check]:
         "kb.tools.pacing_engine", "kb.tools.slowmo_engine", "kb.tools.music_sync",
         "kb.tools.plan_critic", "kb.tools.intelligent_planner",
         "kb.tools.hero_detector", "kb.tools.edit_memory", "kb.tools.reviewer",
+        # Phase 5 intelligence architecture additions
+        "kb.tools.llm_router", "kb.tools.artifact_store",
+        "kb.tools.intent_parser", "kb.tools.editing_research",
+        "kb.tools.build_orchestrator",
     ]:
         checks.append(check_kb_module(rel))
 

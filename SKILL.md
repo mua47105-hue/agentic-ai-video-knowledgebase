@@ -329,6 +329,22 @@ ffmpeg -i input.mp4 -vf "zoompan=z='min(zoom+0.002,1.2)':d=150:x='iw/2-(iw/zoom/
 
 > **As of Phase 9, the plan is red-teamed BEFORE execution.** `kb/tools/plan_critic.py` checks the EditPlan against 11 Hard Rules statically (HR#1, #2, #6, #9, #12, #15, #19, #22, #25, #27, #28), verifies SourceProfile assumptions match the source, confirms hero moments are preserved and dead zones eliminated, and validates plan-graph quality (acyclicity, connectivity, intent coverage). Optional LLM critique (Round 2, different model than planner) catches runtime failure risks. Catches 80% of failures before any FFmpeg call — no other agentic video editor in the wiki does this.
 
+### Phase 4.6: INTELLIGENCE ARCHITECTURE (Phase 5) — synthesized from 11 frameworks
+
+> **Phase 5 integrates 9 patterns borrowed from the 11 frameworks documented in this wiki**, completing the architecture vision. These are additive to Phases 6-9 and run automatically inside `recipe_runner.run_recipe()`.
+
+| Pattern | Source framework | Module | What it does |
+|---|---|---|---|
+| Intent decomposition (explicit + implicit) | VideoAgent | `kb/tools/intent_parser.py` | Decomposes user request into explicit intents (keyword-extracted) + implicit intents (inferred from content_type + source signals). Planner consumes both. |
+| Editing Research pure-reasoning sub-phase | Crayotter | `kb/tools/editing_research.py` | A no-tool LLM reasoning phase that produces a structured editing blueprint (narrative/visual/pacing/narration strategy) BEFORE planning. Falls back to rule-based if LLM unavailable. |
+| LLM model routing per task type | CutClaw | `kb/tools/llm_router.py` | Routes Plan/Critic/Reviewer/Research tasks to different LLM models (ensemble diversity). Cloud-first (Claude/GPT-4o if API keys set), local fallback (Ollama Qwen2.5-Coder). |
+| Storyboard as explicit plan artifact | Project Montage | `intelligent_planner.py` + `artifact_store.py` | The planner produces a `storyboard.md` (scene-by-scene visual description) saved as a separate artifact alongside the EditPlan JSON. |
+| Per-modality BUILD sub-agents | Project Montage | `kb/tools/build_orchestrator.py` | Groups EditPlan steps into 7 modality sub-agents (probe/cut/color/audio/music/mogfx/subtitle/render) with dependency tracking + parallel group detection. |
+| Artifact-grounded traceability | Crayotter | `kb/tools/artifact_store.py` | Saves every phase's output as inspectable artifacts: `source_profile.json`, `relevance_map.json`, `cut_points.json`, `paced_plan.json`, `slowmo_proposals.json`, `music_sync_plan.json`, `hero_moments.json`, `editing_blueprint.json` + `.md`, `edit_plan.json`, `storyboard.md`, `review.json`. Every run is replayable + auditable. |
+| AVE YAML retry_if gates | AVE | `kb/tools/auto_recover.py` (`parse_retry_if_from_yaml` + `evaluate_retry_gates`) | Recipes can declare `retry_if:` blocks: `{metric, threshold, max_retries, feedback_target}`. Gates are evaluated against the 7-dimension review; triggered gates feed back to the planner or editor. |
+| Selective revision (redo downstream) | Crayotter | `kb/tools/auto_recover.py` (`get_downstream_steps` + `selective_revision_plan`) | When a step fails, redo the failed step + all downstream steps (not the whole pipeline). Returns the list of step indices to re-execute. |
+| Per-cut-boundary micro-eval | video-use | (integrated into Reviewer) | Lightweight per-cut evaluation hook in the 7-dimension Reviewer; separate from the macro-loop. |
+
 ### Phase 5: VERIFY — Quality Gates
 
 > **As of Phase 9, the Reviewer scores 7 dimensions.** `kb/tools/reviewer.py` scores the final output on Adherence, Pacing, Visual Quality, Watchability, Audio, Narrative Coherence, and Overall (weighted composite). VMAF auto-correction: if VMAF < 80, re-encode with lower CRF + slower preset (max 2 retries). Outcome is recorded in the edit-pattern memory DB (`kb/tools/edit_memory.py`) so future runs learn which (content_type, technique, params) tuples succeed.

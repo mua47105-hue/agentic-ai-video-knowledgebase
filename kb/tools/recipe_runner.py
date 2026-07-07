@@ -100,6 +100,37 @@ try:
 except ImportError:
     _EditPatternDB = None  # type: ignore
 
+# Phase 5 intelligence architecture additions
+try:
+    from kb.tools.llm_router import get_router as _get_router
+except ImportError:
+    _get_router = None  # type: ignore
+
+try:
+    from kb.tools.artifact_store import ArtifactStore as _ArtifactStore
+except ImportError:
+    _ArtifactStore = None  # type: ignore
+
+try:
+    from kb.tools.intent_parser import parse_intents as _parse_intents
+except ImportError:
+    _parse_intents = None  # type: ignore
+
+try:
+    from kb.tools.editing_research import research_edit as _research_edit
+except ImportError:
+    _research_edit = None  # type: ignore
+
+try:
+    from kb.tools.build_orchestrator import orchest_build as _orchest_build
+except ImportError:
+    _orchest_build = None  # type: ignore
+
+try:
+    from kb.tools.auto_recover import parse_retry_if_from_yaml as _parse_retry_if
+except ImportError:
+    _parse_retry_if = None  # type: ignore
+
 
 class RecipeSubstitutionError(Exception):
     """Raised when a $variable substitution in a recipe cannot be resolved cleanly."""
@@ -948,15 +979,66 @@ def run_recipe(
                     db = _EditPatternDB()
                     memory_hints = db.get_memory_hints(content_type, top_n=5)
                     context["_memory_hints"] = memory_hints
+
+                # Phase 5: Intent decomposition (VideoAgent pattern)
+                intents_obj = None
+                if _parse_intents is not None:
+                    try:
+                        intents_obj = _parse_intents(
+                            recipe.get("description", ""), content_type, sp
+                        )
+                        context["_intents"] = intents_obj
+                        if logger is not None:
+                            logger.log(type="intent_parse",
+                                       action=f"explicit={len(intents_obj['explicit'])} implicit={len(intents_obj['implicit'])}",
+                                       output=intents_obj["all"],
+                                       reasoning="Phase 5 VideoAgent intent decomposition")
+                    except Exception:
+                        intents_obj = None
+                all_intents = (intents_obj or {}).get("all", recipe.get("intents", []))
+
+                # Phase 5: Editing Research pure-reasoning sub-phase (Crayotter pattern)
+                editing_blueprint = None
+                if _research_edit is not None:
+                    try:
+                        router = _get_router() if _get_router is not None else None
+                        editing_blueprint = _research_edit(
+                            sp, context.get("_relevance_map", {}),
+                            content_type, all_intents, router,
+                        )
+                        context["_editing_blueprint"] = editing_blueprint
+                        if logger is not None:
+                            logger.log(type="editing_research",
+                                       action=f"blueprint source={editing_blueprint.get('source')}",
+                                       output=editing_blueprint.get("narrative_strategy", "")[:100],
+                                       reasoning="Phase 5 Crayotter Editing Research sub-phase (no tools)")
+                    except Exception as e:
+                        print(f"Note: Editing research unavailable: {e}", file=sys.stderr)
+
                 edit_plan = _generate_plan(
                     sp, context.get("_relevance_map", {}), context.get("_cut_points", []),
                     context.get("_paced_plan", {}), context.get("_slowmo_proposals", []),
                     context.get("_music_sync_plan", {}), content_type,
-                    recipe.get("intents", []), memory_hints,
+                    all_intents, memory_hints,
                     plan_llm_model=recipe.get("plan_llm", "ollama/qwen2.5-coder:7b"),
                     max_critique_rounds=3,
+                    editing_blueprint=editing_blueprint,
                 )
                 context["_edit_plan"] = edit_plan
+
+                # Phase 5: Build orchestrator (Project Montage per-modality sub-agents)
+                if _orchest_build is not None:
+                    try:
+                        orchestration = _orchest_build(edit_plan)
+                        context["_build_orchestration"] = orchestration
+                        if logger is not None:
+                            logger.log(type="build_orchestrate",
+                                       action=f"sub_agents={list(orchestration.get('sub_agents', {}).keys())}",
+                                       output=orchestration.get("parallel_groups", []),
+                                       reasoning="Phase 5 Project Montage per-modality sub-agents")
+                    except Exception:
+                        pass
+
                 if logger is not None:
                     critic = edit_plan.get("plan_critic_result", {}) or {}
                     logger.log(type="plan_critic",
@@ -966,6 +1048,38 @@ def run_recipe(
                                succeeded=critic.get("approved", False))
             except Exception as e:
                 print(f"Note: Intelligent planner unavailable: {e}", file=sys.stderr)
+
+        # Phase 5: Artifact-grounded traceability (Crayotter pattern)
+        # Save per-phase artifacts to the output dir for replayability/audit
+        if _ArtifactStore is not None:
+            try:
+                store = _ArtifactStore(str(out_path))
+                if context.get("_source_profile"):
+                    store.save_json("source_profile", context["_source_profile"])
+                if context.get("_relevance_map"):
+                    store.save_json("relevance_map", context["_relevance_map"])
+                if context.get("_cut_points"):
+                    store.save_json("cut_points", context["_cut_points"])
+                if context.get("_paced_plan"):
+                    store.save_json("paced_plan", context["_paced_plan"])
+                if context.get("_slowmo_proposals"):
+                    store.save_json("slowmo_proposals", context["_slowmo_proposals"])
+                if context.get("_music_sync_plan"):
+                    store.save_json("music_sync_plan", context["_music_sync_plan"])
+                if context.get("_hero_moments"):
+                    store.save_json("hero_moments", context["_hero_moments"])
+                if context.get("_editing_blueprint"):
+                    bp = context["_editing_blueprint"]
+                    store.save_json("editing_blueprint", {k: v for k, v in bp.items() if k != "blueprint_md"})
+                    if bp.get("blueprint_md"):
+                        store.save_markdown("editing_blueprint", bp["blueprint_md"])
+                if context.get("_edit_plan"):
+                    store.save_json("edit_plan", context["_edit_plan"])
+                    if context["_edit_plan"].get("storyboard"):
+                        store.save_markdown("storyboard", context["_edit_plan"]["storyboard"])
+                context["_artifact_store"] = store
+            except Exception as e:
+                print(f"Note: Artifact store unavailable: {e}", file=sys.stderr)
 
     # ── Step execution ──
     for i, step in enumerate(recipe.get("steps", [])):
@@ -1152,6 +1266,32 @@ def run_recipe(
         except Exception as e:
             print(f"Note: Memory write unavailable: {e}", file=sys.stderr)
 
+    # ── Phase 5: AVE retry_if gate evaluation ──
+    retry_gates_triggered: list[dict] = []
+    if _parse_retry_if is not None and recovery_engine is not None:
+        try:
+            retry_gates = _parse_retry_if(recipe)
+            if retry_gates:
+                retry_gates_triggered = recovery_engine.evaluate_retry_gates(
+                    retry_gates, review_result=review_result, quality_results=quality_results
+                )
+                if retry_gates_triggered and logger is not None:
+                    for g in retry_gates_triggered:
+                        logger.log(type="retry_gate",
+                                   action=f"metric={g['metric']} value={g.get('actual_value', 0):.3f} < {g['threshold']}",
+                                   output=g.get("actual_value"),
+                                   reasoning=f"feedback_target={g.get('feedback_target', 'editor')}",
+                                   succeeded=False)
+        except Exception as e:
+            print(f"Note: Retry gate evaluation unavailable: {e}", file=sys.stderr)
+
+    # ── Phase 5: save review artifact + artifact store summary ──
+    if context.get("_artifact_store") and review_result:
+        try:
+            context["_artifact_store"].save_json("review", review_result)
+        except Exception:
+            pass
+
     # ── Finalize manifest ──
     manifest = {
         "recipe": recipe.get("name", "unknown"),
@@ -1176,6 +1316,12 @@ def run_recipe(
         "memory_hints": context.get("_memory_hints", []),
         "review_result": review_result,
         "memory_writes": memory_writes,
+        # Phase 5 additions
+        "intents": context.get("_intents"),
+        "editing_blueprint": (context.get("_editing_blueprint") or {}).get("source") if context.get("_editing_blueprint") else None,
+        "build_orchestration": context.get("_build_orchestration"),
+        "retry_gates_triggered": retry_gates_triggered,
+        "artifacts": (context.get("_artifact_store") or None).summary() if context.get("_artifact_store") else None,
         # Existing Phase 4 fields
         "vlm_verification": vlm_verification,
         "recovery_attempts": recovery_attempts,

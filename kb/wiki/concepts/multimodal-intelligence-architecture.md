@@ -41,6 +41,24 @@ These three capabilities are not implemented by any of the 11 agentic video fram
 
 3. **Edit-pattern memory that generalizes** — Pilipili learns creator *style* (color palette, pacing) via Mem0; UniVA has 3-level memory (trace/user/task). Nobody learns *technique success rates per content type* — our SQLite DB tracks `(content_type, technique, params_hash) → {success_rate, avg_vmaf, sample_count}` so the planner biases future plans toward historically successful techniques.
 
+## Phase 5: 9 patterns synthesized from 11 frameworks
+
+Phase 5 completes the architecture by integrating 9 additional patterns borrowed from the wiki-documented frameworks (beyond the 3 novel contributions above):
+
+| Pattern | Source | Module |
+|---|---|---|
+| Intent decomposition (explicit + implicit) | VideoAgent | `kb/tools/intent_parser.py` |
+| Editing Research pure-reasoning sub-phase | Crayotter | `kb/tools/editing_research.py` |
+| LLM model routing per task type | CutClaw | `kb/tools/llm_router.py` |
+| Storyboard as explicit plan artifact | Project Montage | `intelligent_planner.py` + `artifact_store.py` |
+| Per-modality BUILD sub-agents | Project Montage | `kb/tools/build_orchestrator.py` |
+| Artifact-grounded traceability | Crayotter | `kb/tools/artifact_store.py` |
+| AVE YAML retry_if gates | AVE | `kb/tools/auto_recover.py` (extended) |
+| Selective revision (redo downstream) | Crayotter | `kb/tools/auto_recover.py` (extended) |
+| Per-cut-boundary micro-eval | video-use | integrated into Reviewer |
+
+Every recipe run now produces 11+ inspectable artifacts in the output dir (source_profile.json, relevance_map.json, cut_points.json, paced_plan.json, slowmo_proposals.json, music_sync_plan.json, hero_moments.json, editing_blueprint.json + .md, edit_plan.json, storyboard.md, review.json) — making every run fully replayable and auditable.
+
 ## Graceful degradation
 
 Every heavy-model dependency is OPTIONAL. The probe degrades gracefully:

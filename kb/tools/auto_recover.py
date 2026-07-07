@@ -139,3 +139,109 @@ class RecoveryEngine:
 
     def summary(self) -> list[dict]:
         return [dataclasses.asdict(a) for a in self.attempts]
+
+    # ── Phase 5 additions: AVE YAML retry_if gates + selective revision ──
+
+    def evaluate_retry_gates(self, retry_gates: list[dict],
+                             review_result: t.Optional[dict] = None,
+                             quality_results: t.Optional[list[dict]] = None) -> list[dict]:
+        """
+        Evaluate AVE-style retry_if gates against the review/quality results.
+
+        Each gate: {"metric": "overall"|"audio"|"visual_quality"|...,
+                    "threshold": float, "max_retries": int, "feedback_target": "planner"|"editor"}
+
+        Returns list of triggered gates (metric below threshold) that still have retries left.
+        """
+        triggered: list[dict] = []
+        for gate in retry_gates:
+            metric = gate.get("metric", "overall")
+            threshold = gate.get("threshold", 0.65)
+            max_retries = gate.get("max_retries", 2)
+
+            # Get the metric value
+            value = None
+            if review_result and metric == "overall":
+                value = review_result.get("overall", 0)
+            elif review_result and metric == "vmaf":
+                value = review_result.get("vmaf", 0)
+                # VMAF threshold is inverted (higher = better, threshold is minimum)
+                if value < threshold and self.retry_counts.get(-1, 0) < max_retries:
+                    triggered.append({**gate, "actual_value": value, "direction": "below"})
+                continue
+            elif review_result:
+                # Check dimension scores
+                for score in review_result.get("scores", []):
+                    if score.get("dimension") == metric:
+                        value = score.get("score", 0)
+                        break
+            elif quality_results:
+                # Check quality gate results
+                for qg in quality_results:
+                    if metric in qg.get("check", ""):
+                        value = 1.0 if qg.get("passed") else 0.0
+                        break
+
+            if value is not None and value < threshold:
+                gate_key = hash(f"{metric}_{gate.get('feedback_target', 'editor')}")
+                if self.retry_counts.get(gate_key, 0) < max_retries:
+                    triggered.append({**gate, "actual_value": value, "direction": "below"})
+
+        return triggered
+
+    def get_downstream_steps(self, failed_step_index: int, total_steps: int) -> list[int]:
+        """
+        Selective revision (Crayotter pattern): return indices of the failed step
+        AND all steps downstream of it (higher indices that depend on its output).
+        """
+        # Simple heuristic: all steps after the failed one are downstream.
+        # A more sophisticated version would trace the output→input dependency graph,
+        # but for our linear pipeline, "all subsequent steps" is correct.
+        return list(range(failed_step_index, total_steps))
+
+    def selective_revision_plan(self, failed_step_index: int, total_steps: int,
+                                param_overrides: t.Optional[dict] = None) -> dict:
+        """
+        Build a selective revision plan: redo the failed step + all downstream steps.
+        Returns {"steps_to_redo": [int], "param_overrides": dict, "strategy": "selective_revision"}
+        """
+        downstream = self.get_downstream_steps(failed_step_index, total_steps)
+        return {
+            "strategy": "selective_revision",
+            "failed_step": failed_step_index,
+            "steps_to_redo": downstream,
+            "param_overrides": param_overrides or {},
+            "reasoning": f"selective revision: redo step {failed_step_index} + {len(downstream)-1} downstream steps (Crayotter pattern)",
+        }
+
+
+def parse_retry_if_from_yaml(recipe: dict) -> list[dict]:
+    """
+    Parse AVE-style retry_if gates from a recipe YAML.
+
+    Recipe YAML format:
+      retry_if:
+        - metric: overall
+          threshold: 0.65
+          max_retries: 2
+          feedback_target: planner
+        - metric: vmaf
+          threshold: 80
+          max_retries: 1
+          feedback_target: editor
+
+    Returns list of gate dicts. Empty if no retry_if block.
+    """
+    retry_block = recipe.get("retry_if", [])
+    if not isinstance(retry_block, list):
+        return []
+    gates: list[dict] = []
+    for gate in retry_block:
+        if isinstance(gate, dict) and "metric" in gate and "threshold" in gate:
+            gates.append({
+                "metric": gate["metric"],
+                "threshold": float(gate["threshold"]),
+                "max_retries": int(gate.get("max_retries", 2)),
+                "feedback_target": gate.get("feedback_target", "editor"),
+            })
+    return gates

@@ -276,3 +276,49 @@ No model requires >6GB VRAM. Qwen2.5-VL (the largest, ~18GB) remains gated behin
 
 ### Current tally
 25 entities (16 active + 9 archived), 7 concepts, 5 guides, 3 comparisons, 1 chart, 7 recipe packs, 5 source pages, root SKILL.md. Extended tools: 30 modules total (16 from Phases 1-4 + 14 new from Phases 6-9).
+
+## [2026-07-07] phase-5 | Intelligence architecture: 9 patterns from 11 frameworks (intent parser, editing research, LLM router, build orchestrator, artifact store, retry_if gates, selective revision, storyboard artifact)
+
+Phase 5 completes the intelligence architecture vision by integrating 9 patterns synthesized from the 11 frameworks documented in this wiki. These were specified in the Phase 5 architecture overview but not yet implemented in Phases 6-9.
+
+### New modules
+- `kb/tools/intent_parser.py` — VideoAgent pattern: decomposes user request into explicit intents (keyword extraction) + implicit intents (inferred from content_type + source signals). 10 content-type implicit-intent tables.
+- `kb/tools/editing_research.py` — Crayotter pattern: pure-reasoning LLM sub-phase that produces a structured editing blueprint (narrative/visual/pacing/narration strategy) BEFORE planning. No tools called. Falls back to rule-based blueprint when LLM unavailable.
+- `kb/tools/llm_router.py` — CutClaw pattern: per-task-type LLM routing (plan/critic/reviewer/research/score). Cloud-first (Claude/GPT-4o via LiteLLM if API keys set), local fallback (Ollama Qwen2.5-Coder). Ensemble diversity: Plan-LLM ≠ Critic-LLM catches single-LLM blind spots.
+- `kb/tools/build_orchestrator.py` — Project Montage pattern: groups EditPlan steps into 7 modality sub-agents (probe/cut/color/audio/music/mogfx/subtitle/render) with dependency tracking + parallel-group detection (color+audio can run together).
+- `kb/tools/artifact_store.py` — Crayotter pattern: saves every phase's output as inspectable artifacts to the output dir (source_profile.json, relevance_map.json, cut_points.json, paced_plan.json, slowmo_proposals.json, music_sync_plan.json, hero_moments.json, editing_blueprint.json + .md, edit_plan.json, storyboard.md, review.json). Every run is replayable + auditable.
+
+### Extended modules
+- `kb/tools/auto_recover.py` — added AVE's `retry_if` YAML gate parsing (`parse_retry_if_from_yaml`) + evaluation (`evaluate_retry_gates`) + Crayotter's selective revision (`get_downstream_steps`, `selective_revision_plan`)
+- `kb/tools/intelligent_planner.py` — now uses LLMRouter for per-task model routing, accepts editing_blueprint as prior input, produces storyboard as a first-class artifact
+- `kb/tools/recipe_runner.py` — wired in all 5 new modules + artifact store + retry_if gate evaluation + build orchestrator; manifest extended with intents, editing_blueprint, build_orchestration, retry_gates_triggered, artifacts fields
+- `scripts/doctor.py` — checks 5 new Phase 5 modules
+
+### What this completes
+The full 8-module intelligent pipeline (M0 PROBE → M0.5 CLASSIFY → M1 RELEVANCE MAP → M2 PLAN → M2.5 CRITIC → M3 BUILD → M4 VERIFY → M5 MEMORY) now has all Phase 5 architecture patterns integrated:
+- Crayotter's 3-phase split (Material Prep / Editing Research / Execution) — ✓ via editing_research
+- Crayotter's artifact-grounded traceability — ✓ via artifact_store
+- Crayotter's selective revision — ✓ via auto_recover extensions
+- AVE's YAML retry_if gates — ✓ via auto_recover extensions
+- UniVA's 3-level memory (trace/task/global) — ✓ (trace=in-memory, task=project.json, global=edit_memory DB)
+- video-use's per-cut-boundary self-eval — ✓ integrated into Reviewer
+- CutClaw's LiteLLM model routing — ✓ via llm_router
+- Project Montage's storyboard artifact — ✓ via intelligent_planner + artifact_store
+- Project Montage's per-modality sub-agents — ✓ via build_orchestrator
+- VideoAgent's explicit+implicit intent decomposition — ✓ via intent_parser
+
+### Deferred (require new deps or out of scope)
+- Pilipili's TTS-first duration lock (requires TTS engine)
+- Pilipili's Mem0 user-level memory (requires mem0ai package)
+- Pilipili's CapCut draft export (requires pyJianYingDraft)
+- OpenMontage's budget governance (cloud spend tracking)
+- X-Cut's skill categorization refactor (large refactor of kb/tools/)
+
+### Tests
+- 93/93 Phase 6-9 tests pass (zero regressions)
+- 241/241 Phase 1 tests pass (zero regressions)
+- classifier + auto_recover + vlm_adapter all pass
+- All 5 new Phase 5 modules verified via smoke tests
+
+### Current tally
+30 entities + concepts + guides, 7 recipe packs, 5 source pages, root SKILL.md. Extended tools: 35 modules total (16 from Phases 1-4 + 14 from Phases 6-9 + 5 new from Phase 5).
