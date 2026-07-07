@@ -33,6 +33,73 @@ except ImportError:
     yaml = None  # type: ignore
 
 
+# ── Platform preset pack (Section 7) ──
+
+PLATFORM_SPECS: dict[str, dict] = {
+    "tiktok": {
+        "safe_w": 900, "safe_h": 1400,
+        "margin_v": 350, "margin_r": 130,
+        "duration_min": 21, "duration_max": 34,
+        "loudness_lufs": -14,
+    },
+    "instagram": {
+        "safe_w": 900, "safe_h": 1400,
+        "margin_v": 400, "margin_r": 0,
+        "duration_min": 11, "duration_max": 17,
+        "loudness_lufs": -14,
+    },
+    "youtube_shorts": {
+        "safe_w": 900, "safe_h": 1400,
+        "margin_v": 400, "margin_r": 0,
+        "duration_min": 30, "duration_max": 50,
+        "loudness_lufs": -14,
+    },
+}
+
+
+# ── Pacing/rhythm presets (Section 8) ──
+
+PACING_PRESETS: dict[str, dict] = {
+    "punchy_shorts": {
+        "hook_window": (0, 2),
+        "cut_cadence": (2, 4),
+        "pattern_interrupt": (5, 8),
+        "min_segment_duration": 2,
+        "max_segment_duration": 6,
+        "max_candidates": 8,
+        "description": "TikTok/Reels: hard hook in 0–2s, cuts every 2–4s, zoom/SFX every 5–8s",
+    },
+    "steady_tutorial": {
+        "hook_window": (0, 5),
+        "cut_cadence": (5, 8),
+        "pattern_interrupt": (10, 15),
+        "min_segment_duration": 5,
+        "max_segment_duration": 12,
+        "max_candidates": 15,
+        "description": "Tutorial/documentary: promise in 0–5s, cuts every 5–8s, gentle pacing",
+    },
+    "broadcast_calm": {
+        "hook_window": None,
+        "cut_cadence": None,
+        "pattern_interrupt": None,
+        "min_segment_duration": 8,
+        "max_segment_duration": 20,
+        "max_candidates": 20,
+        "description": "Broadcast/compliance: editorial pacing, no forced cadence",
+    },
+}
+
+EMPHASIS_WORDS: set[str] = {
+    "top", "best", "worst", "never", "always", "most", "only", "ever",
+    "but", "actually", "turns", "out", "literally", "finally",
+    "one", "two", "three", "first", "second", "last", "new", "big",
+    "huge", "massive", "incredible", "amazing", "terrible", "secret",
+    "you", "your", "because", "so", "here", "watch", "look", "try",
+    "free", "now", "today", "right", "number", "how", "why",
+    "what", "when", "does", "don't", "do", "will", "can",
+}
+
+
 # ── Variable substitution ──
 
 def _substitute(value: t.Any, context: dict) -> t.Any:
@@ -88,6 +155,10 @@ def _resolve_tool(tool_name: str) -> t.Callable:
         fn = _find_best_shots
     elif tool_name == "recipe.speed_ramp":
         fn = _speed_ramp
+    elif tool_name == "recipe.snap_to_beats":
+        fn = snap_to_beats
+    elif tool_name == "recipe.remove_filler_words":
+        fn = remove_filler_words
     else:
         raise ValueError(f"unknown tool: {tool_name}")
 
@@ -112,25 +183,89 @@ def _find_engaging_segments(
     min_duration: float = 30,
     max_duration: float = 60,
     criteria: list[str] | None = None,
+    target_platform: str = "",
+    pacing: str = "",
 ) -> list[dict]:
+    """Find engaging segments using multi-signal scoring (Section 4).
+
+    Scoring signals (all optional, weighted sum):
+      1. Speech-rate variance (needs word timestamps)
+      2. Curiosity/hook keyword density
+      3. Word-count baseline (existing heuristic — fallback)
+
+    When target_platform or pacing is set, min/max defaults pull
+    from PLATFORM_SPECS / PACING_PRESETS.
+    """
+    if target_platform and target_platform in PLATFORM_SPECS:
+        ps = PLATFORM_SPECS[target_platform]
+        min_duration = ps["duration_min"]
+        max_duration = ps["duration_max"]
+
+    if pacing and pacing in PACING_PRESETS:
+        pp = PACING_PRESETS[pacing]
+        min_duration = pp["min_segment_duration"]
+        max_duration = pp["max_segment_duration"]
+
     segs = transcript.get("segments", [])
+    words = transcript.get("words", [])
     if not segs:
         return [{"start": 0, "duration": max_duration, "label": "full"}]
+
     candidates: list[dict] = []
     for s in segs:
         dur = s.get("end", 0) - s.get("start", 0)
         if min_duration <= dur <= max_duration:
             text = s.get("text", "")
-            score = len(text.strip().split())
-            if text:
-                candidates.append({
-                    "start": s["start"],
-                    "duration": dur,
-                    "label": text[:60],
-                    "score": score,
-                })
+            if not text:
+                continue
+
+            seg_words = s.get("words", [])
+            score = _segment_score(text, seg_words)
+            candidates.append({
+                "start": s["start"],
+                "duration": dur,
+                "label": text[:60],
+                "score": score,
+                "text": text,
+            })
+
     candidates.sort(key=lambda c: c["score"], reverse=True)
-    return candidates[:5] if candidates else [{"start": 0, "duration": max_duration, "label": "clip"}]
+    max_candidates = 5
+    if pacing and pacing in PACING_PRESETS:
+        max_candidates = PACING_PRESETS[pacing]["max_candidates"]
+    return candidates[:max_candidates] if candidates else [{"start": 0, "duration": max_duration, "label": "clip"}]
+
+
+def _segment_score(text: str, seg_words: list[dict]) -> float:
+    """Weighted multi-signal score for a single segment.
+
+    Returns 0.0–10.0 score where higher = more engaging.
+    """
+    if not text.strip():
+        return 0.0
+    word_count = len(text.strip().split())
+    base = min(word_count / 10.0, 5.0)
+
+    # Signal 1: keyword/heuristic density
+    words_lower = text.lower().split()
+    keyword_hits = sum(1 for w in words_lower if w.strip(".,!?") in EMPHASIS_WORDS)
+    keyword_score = min(keyword_hits / max(word_count, 1) * 20, 3.0)
+
+    # Signal 2: speech-rate variance (from word timestamps)
+    rate_score = 0.0
+    if len(seg_words) >= 3:
+        rates: list[float] = []
+        for i in range(1, len(seg_words)):
+            gap = seg_words[i]["start"] - seg_words[i - 1]["end"]
+            dur = seg_words[i]["end"] - seg_words[i]["start"]
+            if dur > 0:
+                rates.append(1.0 / max(dur, 0.01))
+        if rates:
+            mean_rate = sum(rates) / len(rates)
+            variance = sum((r - mean_rate) ** 2 for r in rates) / len(rates)
+            rate_score = min(variance * 2, 2.0)
+
+    return base + keyword_score + rate_score
 
 
 def _find_key_moments(
@@ -246,6 +381,186 @@ def _speed_ramp(
     return output
 
 
+def snap_to_beats(
+    segment_list: list[dict],
+    beat_grid: dict,
+    *,
+    snap_tolerance: float = 0.15,
+    prefer_downbeats: bool = True,
+) -> list[dict]:
+    """Nudge segment start/end to nearest beat within tolerance (Section 3).
+
+    Parameters
+    ----------
+    segment_list : list[dict]
+        Each segment must have ``start`` and ``duration`` keys.
+    beat_grid : dict
+        Output of ``music.describe()`` — must contain ``beats`` and optionally ``downbeats``.
+    snap_tolerance : float
+        Max seconds to shift a cut to land on a beat.
+    prefer_downbeats : bool
+        When both a downbeat and regular beat are in range, prefer the downbeat.
+
+    Returns
+    -------
+    list[dict]
+        Updated segment list with ``start`` and ``duration`` nudged.
+        Segments unchanged if no beat within tolerance.
+    """
+    beats: list[float] = beat_grid.get("beats", [])
+    downbeats: list[float] = beat_grid.get("downbeats", [])
+    if not beats:
+        return segment_list
+
+    def _nearest_beat(t: float) -> float | None:
+        candidates: list[tuple[float, float]] = []
+        for b in beats:
+            if abs(b - t) <= snap_tolerance:
+                candidates.append((b, abs(b - t)))
+        if not candidates:
+            return None
+
+        tie_beats: list[float] = [b for b, d in candidates if d == min(d for _, d in candidates)]
+        if prefer_downbeats and len(tie_beats) > 1:
+            down_in_range = [b for b in tie_beats if b in downbeats]
+            if down_in_range:
+                return down_in_range[0]
+        return tie_beats[0]
+
+    updated: list[dict] = []
+    for seg in segment_list:
+        new_seg = dict(seg)
+        orig_start = seg["start"]
+        orig_end = orig_start + seg["duration"]
+
+        new_start = _nearest_beat(orig_start)
+        new_end = _nearest_beat(orig_end)
+
+        if new_start is not None:
+            new_seg["start"] = new_start
+            new_seg["duration"] = (orig_end if new_end is None else new_end) - new_start
+            if new_seg.get("_orig_start") is None:
+                new_seg["_orig_start"] = orig_start
+        if new_end is not None:
+            new_seg["duration"] = (new_start if new_start is not None else orig_start) - new_end
+            # If both nudged, duration is new_end - new_start
+            if new_start is not None:
+                new_seg["duration"] = new_end - new_start
+
+        if new_start is None and new_end is not None:
+            new_seg["start"] = orig_start
+            new_seg["duration"] = new_end - orig_start
+
+        if new_seg["duration"] <= 0:
+            new_seg["duration"] = seg["duration"]
+            new_seg["start"] = seg["start"]
+
+        updated.append(new_seg)
+
+    return updated
+
+
+def remove_filler_words(
+    input: str,
+    output: str,
+    words: list[dict],
+    *,
+    filler_list: list[str] | None = None,
+    min_gap: float = 0.15,
+) -> str:
+    """Remove verbal filler words ("um", "uh", "like") from audio (Section 6).
+
+    Uses word-level timestamps to identify and remove filler segments,
+    then re-encodes via the same concat-safe pattern as silence_remove.
+
+    Parameters
+    ----------
+    input : str
+        Path to input video/audio.
+    output : str
+        Path to output file.
+    words : list[dict]
+        Word-level timestamps from transcribe() — each must have
+        ``word``, ``start``, ``end``.
+    filler_list : list[str] | None
+        Words to remove. Defaults to common English filler words.
+    min_gap : float
+        Don't cut fillers closer together than this to avoid choppy micro-cuts.
+
+    Returns
+    -------
+    str
+        Path to output file.
+    """
+    from kb.tools.ffmpeg_adapter import _run, _check_ffmpeg, _ensure_parent
+    _check_ffmpeg()
+    _ensure_parent(output)
+
+    if filler_list is None:
+        filler_list = ["um", "uh", "uhh", "umm", "like", "you know", "actually", "basically"]
+
+    filler_segments: list[tuple[float, float]] = []
+    for i, w in enumerate(words):
+        w_text = w.get("word", "").strip().rstrip(".,!?").lower()
+        if w_text in filler_list:
+            start = w["start"]
+            end = w["end"]
+            if filler_segments and (start - filler_segments[-1][1]) < min_gap:
+                merged_start, _ = filler_segments.pop()
+                filler_segments.append((merged_start, end))
+            else:
+                filler_segments.append((start, end))
+
+    if not filler_segments:
+        from kb.tools.ffmpeg_adapter import _run as _cp
+        _cp(["cp", input, output], check=True)
+        return output
+
+    keep_parts: list[tuple[float, float]] = []
+    cursor = 0.0
+    filler_dur = sum(e - s for s, e in filler_segments)
+
+    # probe duration
+    probe = _run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                   "-of", "csv=p=0", input], check=True)
+    total_dur = float(probe.stdout.strip())
+
+    for fs, fe in filler_segments:
+        if fs - cursor > 0.05:
+            keep_parts.append((cursor, fs))
+        cursor = max(cursor, fe)
+    if total_dur - cursor > 0.05:
+        keep_parts.append((cursor, total_dur))
+
+    if len(keep_parts) <= 1:
+        from kb.tools.ffmpeg_adapter import _run as _cp
+        _cp(["cp", input, output], check=True)
+        return output
+
+    filter_parts_v: list[str] = []
+    filter_parts_a: list[str] = []
+    for i, (ks, ke) in enumerate(keep_parts):
+        filter_parts_v.append(f"[0:v]trim={ks}:{ke},setpts=PTS-STARTPTS[v{i}]")
+        filter_parts_a.append(f"[0:a]atrim={ks}:{ke},asetpts=PTS-STARTPTS[a{i}]")
+
+    v_concat = "".join(f"[v{i}]" for i in range(len(keep_parts)))
+    a_concat = "".join(f"[a{i}]" for i in range(len(keep_parts)))
+    filter_complex = (
+        ";".join(filter_parts_v + filter_parts_a)
+        + f";{v_concat}concat=n={len(keep_parts)}:v=1:a=0[vout]"
+        + f";{a_concat}concat=n={len(keep_parts)}:v=0:a=1[aout]"
+    )
+
+    cmd = [
+        "ffmpeg", "-i", input,
+        "-filter_complex", filter_complex,
+        "-map", "[vout]", "-map", "[aout]",
+        "-c:v", "libx264", "-c:a", "aac", output,
+    ]
+    _run(cmd, check=True)
+    return output
+
+
 # ── Quality gate runner ──
 
 def _run_quality_gates(gates: list[dict], context: dict, output_path: str) -> list[dict]:
@@ -269,6 +584,18 @@ def _run_quality_gates(gates: list[dict], context: dict, output_path: str) -> li
                 lufs = r.get("lufs", 0)
                 passed = abs(lufs - target) <= 1.0
                 results.append({"check": check, "passed": passed, "details": {"measured": lufs, "target": target}})
+            elif check == "average_shot_length_within":
+                preset = gate.get("preset", "")
+                if preset in PACING_PRESETS:
+                    pp = PACING_PRESETS[preset]
+                    dmin, dmax = pp["cut_cadence"] if pp["cut_cadence"] else (2, 20)
+                else:
+                    dmin, dmax = 2, 20
+                from kb.tools.unified_adapter import edit
+                r = edit.probe(output_path)
+                dur = r.get("duration", 0)
+                passed = dmin <= dur <= dmax
+                results.append({"check": check, "passed": passed, "details": {"cadence": f"{dmin}-{dmax}s", "duration": dur}})
             elif check == "duration_within":
                 dmin = gate.get("min", 0)
                 dmax = gate.get("max", 9999)

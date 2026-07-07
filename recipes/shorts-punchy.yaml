@@ -1,0 +1,101 @@
+name: shorts-punchy
+description: >
+  Punchy 20-30s short with word-pop captions, beat-synced cuts,
+  hook-first structure, and smart vertical reframe.
+version: 1.0
+content_type: short_form
+target_platform: tiktok
+pacing: punchy_shorts
+caption_style: word_pop
+beat_sync: true
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+      word_timestamps: true
+    output: transcript
+
+  - operation: analyze_music
+    tool: music.describe
+    params:
+      audio_path: null
+      detailed: true
+    output: beat_grid
+
+  - operation: find_segments
+    tool: recipe.find_engaging_segments
+    params:
+      target_platform: tiktok
+      pacing: punchy_shorts
+    output: segment_list
+
+  - operation: snap_to_beats
+    tool: recipe.snap_to_beats
+    params:
+      segment_list: "$segment_list"
+      beat_grid: "$beat_grid"
+      snap_tolerance: 0.15
+      prefer_downbeats: true
+    output: snapped_segments
+
+  - operation: for_each_segment
+    parallel: true
+    loop_var: segment
+    source: snapped_segments
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$segment.start"
+          duration: "$segment.duration"
+          accurate: true
+
+      - operation: remove_filler
+        tool: recipe.remove_filler_words
+        params:
+          words: "$transcript.words"
+
+      - operation: reframe_vertical
+        tool: edit.smart_reframe
+        params:
+          target_width: 1080
+          target_height: 1920
+          strategy: auto
+
+      - operation: add_captions
+        tool: edit.text_subtitles_animated
+        params:
+          preset: word_pop
+          platform: tiktok
+          words: "$transcript.words"
+
+      - operation: color_grade
+        tool: edit.color_grade
+        params:
+          style: vlog
+
+      - operation: loudnorm
+        tool: edit.loudnorm_limited
+        params:
+          target_lufs: -14
+          true_peak: -1.0
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: tiktok-vertical
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: lufs_within_1db
+    target: -14
+  - check: average_shot_length_within
+    preset: punchy_shorts

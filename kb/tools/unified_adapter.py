@@ -289,6 +289,30 @@ class _VlmModule(_types.ModuleType):
 vlm = _VlmModule("vlm_adapter")
 
 # ═══════════════════════════════════════════════════════════════
+# Caption presets (Section 2 — word-animated subtitle burn-in)
+# ═══════════════════════════════════════════════════════════════
+
+from kb.tools.caption_presets import caption_ass, text_subtitles_animated
+
+# ═══════════════════════════════════════════════════════════════
+# Reframe adapter (Section 5 — smart vertical reframe, gated)
+# ═══════════════════════════════════════════════════════════════
+
+try:
+    import kb.tools.reframe_adapter as _reframe_adapter
+    smart_reframe = _reframe_adapter.smart_reframe
+    REFRAME_AVAILABLE = _reframe_adapter.REFAME_ENABLED
+except Exception:
+    smart_reframe = None  # type: ignore
+    REFRAME_AVAILABLE = False
+
+# ═══════════════════════════════════════════════════════════════
+# Platform/pacing presets (Sections 7, 8)
+# ═══════════════════════════════════════════════════════════════
+
+from kb.tools.recipe_runner import PLATFORM_SPECS, PACING_PRESETS
+
+# ═══════════════════════════════════════════════════════════════
 # Deprecation helpers — `from kb.tools.unified_adapter import edit`
 # ═══════════════════════════════════════════════════════════════
 
@@ -353,8 +377,12 @@ __all__ = [
     "compliance_report", "list_specs", "COMPLIANCE_SPECS",
     # MLT export
     "export_mlt", "render_mlt", "export_fcpxml",
-    # Recipe runner
-    "run_recipe",
+    # Recipe runner + built-in recipe tools
+    "run_recipe", "PLATFORM_SPECS", "PACING_PRESETS",
+    # Caption presets (Section 2)
+    "caption_ass", "text_subtitles_animated",
+    # Reframe adapter (Section 5, gated)
+    "smart_reframe", "REFRAME_AVAILABLE",
     # VLM adapter (gated)
     "vlm",
     # Convenience

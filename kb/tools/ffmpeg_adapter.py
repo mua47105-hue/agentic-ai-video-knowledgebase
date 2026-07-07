@@ -254,8 +254,16 @@ def silence_remove(input: str, output: str, threshold: float = -50,
 
 
 def transcribe(input: str, model: str = "base", output_srt: str = "",
-               language: str = "") -> dict:
-    """Transcribe audio with faster-whisper.  Returns {segments, srt_path, language}."""
+               language: str = "", word_timestamps: bool = True) -> dict:
+    """Transcribe audio with faster-whisper.
+
+    Returns {segments, srt_path, language}.
+
+    When word_timestamps=True (default), also returns a ``words`` list
+    of {word, start, end, probability} dicts and attaches a ``words``
+    key to each segment for per-word timing (needed by caption presets,
+    filler-word removal, and speech-rate scoring).
+    """
     try:
         from faster_whisper import WhisperModel
     except ImportError:
@@ -269,21 +277,43 @@ def transcribe(input: str, model: str = "base", output_srt: str = "",
               "-ar", "16000", "-ac", "1", audio_path], check=True)
 
     model_obj = WhisperModel(model, device="cpu", compute_type="int8")
-    segs, info = model_obj.transcribe(audio_path, language=language or None)
-    segments = []
-    srt_lines = []
+    segs, info = model_obj.transcribe(
+        audio_path, language=language or None,
+        word_timestamps=word_timestamps,
+    )
+    segments: list[dict] = []
+    all_words: list[dict] = []
+    srt_lines: list[str] = []
     for i, s in enumerate(segs, 1):
-        segments.append({"id": i, "start": s.start, "end": s.end, "text": s.text.strip()})
+        text = s.text.strip()
+        seg_words: list[dict] = []
+        if s.words:
+            for w in s.words:
+                wd = {
+                    "word": w.word.strip(),
+                    "start": w.start,
+                    "end": w.end,
+                    "probability": round(w.probability, 3) if hasattr(w, "probability") and w.probability is not None else 1.0,
+                }
+                seg_words.append(wd)
+                all_words.append(wd)
+        segments.append({
+            "id": i, "start": s.start, "end": s.end,
+            "text": text, "words": seg_words,
+        })
         srt_lines.append(f"{i}")
         srt_lines.append(f"{_fmt_srt(s.start)},{_fmt_srt_ms(s.start)} --> {_fmt_srt(s.end)},{_fmt_srt_ms(s.end)}")
-        srt_lines.append(s.text.strip())
+        srt_lines.append(text)
         srt_lines.append("")
 
-    result = {
+    result: dict = {
         "language": info.language,
         "segments": segments,
         "srt": "\n".join(srt_lines),
     }
+    if word_timestamps:
+        result["words"] = all_words
+
     if output_srt:
         pathlib.Path(output_srt).write_text(result["srt"])
         result["srt_path"] = output_srt
@@ -303,24 +333,34 @@ def _fmt_srt_ms(seconds: float) -> str:
     return f"{int((seconds % 1) * 1000):03d}"
 
 
+_COLOR_STYLES: dict[str, str] = {
+    "warm": "eq=contrast=1.1:brightness=0.02:saturation=1.2,"
+            "colorbalance=rs=0.1:gs=-0.05:bs=-0.05",
+    "cool": "eq=contrast=1.15:saturation=0.9,"
+            "colorbalance=rs=0.05:gs=-0.05:bs=0.15,"
+            "curves=r='0/0 1/0.95':b='0/0 1/0.9'",
+    "bw": "hue=s=0,eq=contrast=1.3:brightness=0.03",
+    "cinematic": "eq=contrast=1.2:saturation=0.7:brightness=-0.02,"
+                 "colorbalance=rs=-0.1:gs=0.05:bs=0.15,"
+                 "curves=r='0/0 0.5/0.45 1/0.95':g='0/0 0.5/0.5 1/1':b='0/0 0.5/0.55 1/1.05'",
+    "vlog": "eq=contrast=1.05:brightness=0.03:saturation=1.15,"
+            "colorbalance=rs=0.08:gs=0.03:bs=-0.05",
+    "moody": "eq=contrast=1.25:saturation=0.5:brightness=-0.03,"
+             "colorbalance=rs=-0.05:gs=0.0:bs=0.1,"
+             "curves=r='0/0 0.5/0.4 1/0.9':g='0/0 0.5/0.5 1/1':b='0/0 0.5/0.6 1/1.1'",
+    "vibrant": "eq=contrast=1.15:saturation=1.4:brightness=0.01",
+}
+
 def color_grade(input: str, output: str, brightness: float = 0.0,
                 contrast: float = 1.0, saturation: float = 1.0,
                 style: str = "") -> str:
-    """Apply color correction.  style='warm'/'cool'/'bw' sets presets."""
+    """Apply color correction.  style='warm'/'cool'/'bw'/'cinematic'/'vlog'/'moody'/'vibrant'."""
     _check_ffmpeg()
     _ensure_parent(output)
-    filters = []
-    if style == "warm":
-        filters.append("eq=contrast=1.1:brightness=0.02:saturation=1.2,"
-                       "colorbalance=rs=0.1:gs=-0.05:bs=-0.05")
-    elif style == "cool":
-        filters.append("eq=contrast=1.15:saturation=0.9,"
-                       "colorbalance=rs=0.05:gs=-0.05:bs=0.15,"
-                       "curves=r='0/0 1/0.95':b='0/0 1/0.9'")
-    elif style == "bw":
-        filters.append("hue=s=0,eq=contrast=1.3:brightness=0.03")
+    if style in _COLOR_STYLES:
+        filters = [_COLOR_STYLES[style]]
     else:
-        filters.append(f"eq=brightness={brightness}:contrast={contrast}:saturation={saturation}")
+        filters = [f"eq=brightness={brightness}:contrast={contrast}:saturation={saturation}"]
     cmd = [_FFMPEG, "-i", input, "-vf", ",".join(filters), "-c:a", "copy", output]
     _run(cmd, check=True)
     return output

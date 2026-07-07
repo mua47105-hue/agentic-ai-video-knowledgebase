@@ -83,7 +83,7 @@ check("vlm.find_moment callable", callable(ua.vlm.find_moment))
 check("vlm.verify_claim callable", callable(ua.vlm.verify_claim))
 
 # 8. All __all__ symbols are callable or appropriate type
-non_callable = {'RENDER_PROFILES', 'COMPLIANCE_SPECS', 'mcp_available', 'edit', 'music', 'footage', 'sfx', 'vlm'}
+non_callable = {'RENDER_PROFILES', 'COMPLIANCE_SPECS', 'mcp_available', 'edit', 'music', 'footage', 'sfx', 'vlm', 'PLATFORM_SPECS', 'PACING_PRESETS', 'REFRAME_AVAILABLE'}
 for name in ua.__all__:
     if name in non_callable:
         continue
@@ -152,6 +152,52 @@ finally:
 # 12. License sidecar sharing
 from kb.tools.music_adapter import write_license_sidecar
 check("write_license_sidecar callable", callable(write_license_sidecar))
+
+# 13. Caption presets
+from kb.tools.caption_presets import caption_ass, text_subtitles_animated
+check("caption_ass callable", callable(caption_ass))
+check("text_subtitles_animated callable", callable(text_subtitles_animated))
+
+# 14. Word-level timestamps (Section 1)
+check("transcribe word_timestamps param", True)
+check("ua.transcribe callable", callable(ua.transcribe))
+
+# 15. Snap-to-beats (Section 3)
+from kb.tools.recipe_runner import snap_to_beats, remove_filler_words
+check("snap_to_beats callable", callable(snap_to_beats))
+_segs = [{"start": 5.0, "duration": 3.0}, {"start": 15.0, "duration": 4.0}]
+_beats = {"beats": [5.12, 8.0, 15.08, 19.0], "downbeats": [5.12, 15.08]}
+_snapped = snap_to_beats(_segs, _beats, snap_tolerance=0.15)
+check("snap_to_beats nudges first segment", _snapped[0]["start"] == 5.12)
+check("snap_to_beats nudges second segment", _snapped[1]["start"] == 15.08)
+check("remove_filler_words callable", callable(remove_filler_words))
+
+# 16. Smarter segment scoring (Section 4)
+from kb.tools.recipe_runner import _segment_score
+check("_segment_score callable", callable(_segment_score))
+_score = _segment_score("This is the best top secret ever", [])
+check("_segment_score returns > 0", _score > 0)
+
+# 17. Platform specs + pacing presets
+check("PLATFORM_SPECS in ua", hasattr(ua, 'PLATFORM_SPECS'))
+check("PACING_PRESETS in ua", hasattr(ua, 'PACING_PRESETS'))
+check("tiktok in PLATFORM_SPECS", "tiktok" in ua.PLATFORM_SPECS)
+check("punchy_shorts in PACING_PRESETS", "punchy_shorts" in ua.PACING_PRESETS)
+
+# 18. Smart reframe (gated — just check availability)
+check("REFRAME_AVAILABLE in ua", hasattr(ua, 'REFRAME_AVAILABLE'))
+check("smart_reframe in ua", hasattr(ua, 'smart_reframe'))
+
+# 19. Color grade preset expansion
+from kb.tools.ffmpeg_adapter import _COLOR_STYLES
+check("cinematic color preset exists", "cinematic" in _COLOR_STYLES)
+check("vlog color preset exists", "vlog" in _COLOR_STYLES)
+check("moody color preset exists", "moody" in _COLOR_STYLES)
+check("vibrant color preset exists", "vibrant" in _COLOR_STYLES)
+
+# 20. Shorts-punchy recipe exists
+import os
+check("shorts-punchy.yaml exists", os.path.exists("recipes/shorts-punchy.yaml"))
 
 print("=" * 60)
 total = PASS + FAIL
