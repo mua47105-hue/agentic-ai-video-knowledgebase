@@ -317,6 +317,29 @@ def _accepts_context(fn: t.Callable) -> bool:
         return False
 
 
+def _remap_input_param(fn: t.Callable, params: dict) -> dict:
+    """Fix P0: remap 'input' to the function's actual first-positional parameter name.
+    The recipe runner injects params['input'] for edit.* calls, but mcp_bridge functions
+    use different names ('input_path', 'video', 'path', 'video_path', etc.).
+    This inspects the function signature and remaps 'input' to the correct name."""
+    import inspect
+    if "input" not in params:
+        return params
+    try:
+        sig = inspect.signature(fn)
+        if "input" in sig.parameters:
+            return params  # 'input' is already a valid param — no remap needed
+        # Find the first positional-or-keyword parameter (the "input" param)
+        for name, p in sig.parameters.items():
+            if p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.POSITIONAL_ONLY):
+                # Remap 'input' → first positional param name
+                params[name] = params.pop("input")
+                return params
+    except (ValueError, TypeError):
+        pass
+    return params
+
+
 def _recipe_needs_intelligence(steps: list[dict]) -> bool:
     """Speed: determine if a recipe actually uses intelligence-layer outputs.
     If it only calls edit.trim/resize/render/color_grade (no find_* tools, no
@@ -916,6 +939,9 @@ def _execute_step(step: dict, context: dict, input_path: str, output_dir: str) -
         caller = getattr(edit, fn, None)
         if caller is None:
             raise ValueError(f"unknown edit tool: {fn}")
+        # Fix P0: remap 'input' to the function's actual first-positional parameter name
+        # (mcp_info takes 'input_path', mcp_video_info_detailed takes 'video', etc.)
+        params = _remap_input_param(caller, params)
         result = caller(**params)
         if isinstance(result, str):
             result = {"path": result}

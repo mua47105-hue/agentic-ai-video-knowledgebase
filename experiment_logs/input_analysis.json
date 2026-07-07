@@ -1,0 +1,1625 @@
+{
+  "source_profile": {
+    "metadata": {
+      "video_path": "/home/z/my-project/experiment/input.mp4",
+      "duration": 19.366667,
+      "width": 360,
+      "height": 640,
+      "fps": 30.0,
+      "aspect_ratio": 0.5625,
+      "has_video": true,
+      "has_audio": true
+    },
+    "visual": {
+      "duration": 19.366667,
+      "width": 360,
+      "height": 640,
+      "fps": 30.0,
+      "aspect_ratio": 0.5625,
+      "has_video_stream": true,
+      "codec": "h264",
+      "scene_boundaries": [
+        0.0
+      ],
+      "frame_features": [],
+      "per_second": [
+        {
+          "ts": 0,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.767129840525034,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 1,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.7514100052865622,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 2,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.9822121922305183,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 3,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 1.0,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 4,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.6050510602869917,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 5,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.5645202568954344,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 6,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.5797861430782755,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 7,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.7908904703138345,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 8,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.6800108246138871,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 9,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.4649477044559179,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 10,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.5143175172875234,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 11,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.5108819386921513,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 12,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.33986595717049833,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 13,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.3972899843685559,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 14,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.719479771846219,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 15,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.6827327754282533,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 16,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.6696252077826057,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 17,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.56615536110559,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 18,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.5729957689538788,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        },
+        {
+          "ts": 19,
+          "face_present": false,
+          "face_emotion": null,
+          "face_arousal": 0.0,
+          "face_valence": 0.5,
+          "motion_energy": 0.477541673548285,
+          "aesthetic_score": 0.5,
+          "ocr_text": null,
+          "shot_scale": "unknown"
+        }
+      ],
+      "motion_peaks": [
+        {
+          "timestamp": 3.066666666666667,
+          "intensity": 36.100833892822266,
+          "sigma": 3.033492292275344
+        }
+      ],
+      "emotion_peaks": [],
+      "aesthetic_peaks": [],
+      "components_used": [
+        "ffprobe",
+        "pyscenedetect",
+        "opencv_motion"
+      ]
+    },
+    "audio": {
+      "duration": 19.366667,
+      "sample_rate": 0,
+      "has_audio": true,
+      "tempo": 93.75,
+      "beats": [
+        0.096,
+        0.704,
+        1.312,
+        1.92,
+        2.56,
+        3.232,
+        3.872,
+        4.512,
+        5.12,
+        5.728,
+        6.336,
+        6.944,
+        7.584,
+        8.224,
+        8.864,
+        9.536,
+        10.24,
+        10.88,
+        11.488,
+        12.064,
+        12.64,
+        13.216,
+        13.824,
+        14.496,
+        15.136,
+        15.776,
+        16.352,
+        16.928,
+        17.536,
+        18.144,
+        18.784
+      ],
+      "downbeats": [
+        0.096,
+        2.56,
+        5.12,
+        7.584,
+        10.24,
+        12.64,
+        15.136,
+        17.536
+      ],
+      "onsets": [
+        0.096,
+        5.536,
+        5.728,
+        8.8,
+        9.216,
+        9.536,
+        10.496,
+        10.752,
+        10.88,
+        10.912,
+        11.584,
+        12.064,
+        12.096,
+        12.608,
+        12.64,
+        13.792,
+        13.824,
+        14.848,
+        14.88,
+        15.136,
+        15.488,
+        15.52,
+        15.552,
+        15.808,
+        16.48,
+        17.12,
+        17.728,
+        17.984,
+        18.144,
+        18.4,
+        18.592,
+        18.784,
+        19.264
+      ],
+      "music_present": false,
+      "music_sections": [],
+      "speech_segments": [],
+      "silence_segments": [],
+      "silence_ratio": 0.0,
+      "speaker_segments": [
+        {
+          "start": 0,
+          "end": -1,
+          "speaker": "SPEAKER_00"
+        }
+      ],
+      "speaker_count": 1,
+      "stems_separated": false,
+      "vocals_path": null,
+      "music_path": null,
+      "prosody_emotion": [],
+      "integrated_lufs": -70.0,
+      "loudness_range": 0.0,
+      "true_peak_db": -70.0,
+      "per_second": [
+        {
+          "ts": 0,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 1,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 2,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 3,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 4,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 5,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 6,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 7,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 8,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": false,
+          "beat": true
+        },
+        {
+          "ts": 9,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 10,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 11,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 12,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 13,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 14,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 15,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 16,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 17,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        },
+        {
+          "ts": 18,
+          "speech": false,
+          "speaker": "SPEAKER_00",
+          "prosody_emotion": null,
+          "onset": true,
+          "beat": true
+        }
+      ],
+      "components_used": [
+        "ffprobe_audio",
+        "librosa_beats",
+        "pyannote_diarization",
+        "ebur128_loudness"
+      ]
+    },
+    "semantic": {
+      "transcript": [
+        {
+          "start": 0.0,
+          "end": 2.86,
+          "text": "1.8kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 0.0,
+              "end": 0.7
+            },
+            {
+              "word": ".8kg",
+              "start": 0.7,
+              "end": 2.86
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        },
+        {
+          "start": 2.86,
+          "end": 3.24,
+          "text": "1.5kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 2.86,
+              "end": 3.24
+            },
+            {
+              "word": ".5kg",
+              "start": 3.24,
+              "end": 3.24
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        },
+        {
+          "start": 5.24,
+          "end": 6.4,
+          "text": "1.5kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 5.24,
+              "end": 6.4
+            },
+            {
+              "word": ".5kg",
+              "start": 6.4,
+              "end": 6.4
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        },
+        {
+          "start": 6.4,
+          "end": 7.66,
+          "text": "1.5kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 6.4,
+              "end": 7.38
+            },
+            {
+              "word": ".5kg",
+              "start": 7.38,
+              "end": 7.66
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        },
+        {
+          "start": 7.66,
+          "end": 7.82,
+          "text": "1.5kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 7.66,
+              "end": 7.66
+            },
+            {
+              "word": ".5kg",
+              "start": 7.66,
+              "end": 7.82
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        },
+        {
+          "start": 7.82,
+          "end": 8.14,
+          "text": "1.5kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 7.82,
+              "end": 8.14
+            },
+            {
+              "word": ".5kg",
+              "start": 8.14,
+              "end": 8.14
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        },
+        {
+          "start": 8.14,
+          "end": 8.72,
+          "text": "1.5kg",
+          "words": [
+            {
+              "word": " 1",
+              "start": 8.14,
+              "end": 8.14
+            },
+            {
+              "word": ".5kg",
+              "start": 8.14,
+              "end": 8.72
+            }
+          ],
+          "semantic_importance": 0.325,
+          "emotional_intensity": 0.0,
+          "hook_potential": 0.6
+        }
+      ],
+      "packed_brief": "# Packed Transcript\n\nDuration: 0.0s (0.0 min)\nSegments: 7\nTotal words: 7\n\n[00:00 - 00:03] 1.8kg 1.5kg\n[00:05 - 00:08] 1.5kg 1.5kg 1.5kg 1.5kg 1.5kg",
+      "keyphrases": [],
+      "language": "jw",
+      "total_words": 7,
+      "words_per_minute": 0.0,
+      "filler_word_ratio": 0.0,
+      "per_second": [],
+      "components_used": [
+        "faster_whisper",
+        "heuristic_scoring"
+      ]
+    },
+    "per_second": [
+      {
+        "ts": 0,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.767129840525034,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 1,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.7514100052865622,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 2,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.9822121922305183,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 3,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 1.0,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 4,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.6050510602869917,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 5,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.5645202568954344,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 6,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.5797861430782755,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 7,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.7908904703138345,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 8,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.6800108246138871,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": false,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 9,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.4649477044559179,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 10,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.5143175172875234,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 11,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.5108819386921513,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 12,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.33986595717049833,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 13,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.3972899843685559,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 14,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.719479771846219,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 15,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.6827327754282533,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 16,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.6696252077826057,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 17,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.56615536110559,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      },
+      {
+        "ts": 18,
+        "face_present": false,
+        "face_emotion": null,
+        "face_arousal": 0.0,
+        "face_valence": 0.5,
+        "motion_energy": 0.5729957689538788,
+        "aesthetic_score": 0.5,
+        "shot_scale": "unknown",
+        "ocr_text": null,
+        "audio_speech": false,
+        "audio_speaker": "SPEAKER_00",
+        "audio_prosody_emotion": null,
+        "audio_beat": true,
+        "audio_onset": true,
+        "semantic_speech": false,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "hook_potential": 0.0,
+        "text": ""
+      }
+    ],
+    "peaks": {
+      "motion": [
+        {
+          "timestamp": 3.066666666666667,
+          "intensity": 36.100833892822266,
+          "sigma": 3.033492292275344
+        }
+      ],
+      "emotion": [],
+      "aesthetic": [],
+      "audio_onset": [
+        0.096,
+        5.536,
+        5.728,
+        8.8,
+        9.216,
+        9.536,
+        10.496,
+        10.752,
+        10.88,
+        10.912,
+        11.584,
+        12.064,
+        12.096,
+        12.608,
+        12.64,
+        13.792,
+        13.824,
+        14.848,
+        14.88,
+        15.136,
+        15.488,
+        15.52,
+        15.552,
+        15.808,
+        16.48,
+        17.12,
+        17.728,
+        17.984,
+        18.144,
+        18.4,
+        18.592,
+        18.784,
+        19.264
+      ],
+      "semantic_importance": []
+    },
+    "timeline_png_path": "/home/z/my-project/experiment/input_timeline.png",
+    "components_used": {
+      "visual": [
+        "ffprobe",
+        "pyscenedetect",
+        "opencv_motion"
+      ],
+      "audio": [
+        "ffprobe_audio",
+        "librosa_beats",
+        "pyannote_diarization",
+        "ebur128_loudness"
+      ],
+      "semantic": [
+        "faster_whisper",
+        "heuristic_scoring"
+      ]
+    }
+  },
+  "relevance_map": {
+    "per_second": [
+      {
+        "ts": 0.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.533564920262517,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.8,
+        "hero_score": 0.15149343030738321
+      },
+      {
+        "ts": 1.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.5257050026432811,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.10224426737372108
+      },
+      {
+        "ts": 2.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.6411060961152591,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.10735455652773823
+      },
+      {
+        "ts": 3.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.65,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.10771930079372141
+      },
+      {
+        "ts": 4.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.45252553014349584,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.0985579063472639
+      },
+      {
+        "ts": 5.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.4322601284477172,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.09746013054846339
+      },
+      {
+        "ts": 6.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.4398930715391377,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.1444968136797045
+      },
+      {
+        "ts": 7.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.5454452351569172,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.1031734262815416
+      },
+      {
+        "ts": 8.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.4900054123069435,
+        "audio_energy": 0.03,
+        "pacing_fit": 0.6,
+        "hero_score": 0.10049656511460907
+      },
+      {
+        "ts": 9.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.38247385222795893,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.13964764823643708
+      },
+      {
+        "ts": 10.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.4071587586437617,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.14179348798445085
+      },
+      {
+        "ts": 11.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.40544096934607565,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.14164729162831363
+      },
+      {
+        "ts": 12.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.31993297858524916,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.1337172314664795
+      },
+      {
+        "ts": 13.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.3486449921842779,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.1365359879138922
+      },
+      {
+        "ts": 14.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.5097398859231095,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.14980539565295953
+      },
+      {
+        "ts": 15.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.49136638771412666,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.1484635181994042
+      },
+      {
+        "ts": 16.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.4848126038913029,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.14797594857673943
+      },
+      {
+        "ts": 17.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.43307768055279494,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.14394643470667726
+      },
+      {
+        "ts": 18.0,
+        "semantic_importance": 0.5,
+        "emotional_intensity": 0.0,
+        "visual_interest": 0.4364978844769394,
+        "audio_energy": 0.18,
+        "pacing_fit": 0.6,
+        "hero_score": 0.1442234219200594
+      }
+    ],
+    "hero_moments": [],
+    "dead_zones": [],
+    "dimension_correlations": {
+      "semantic_importance__emotional_intensity": 0.0,
+      "semantic_importance__visual_interest": 0.0,
+      "semantic_importance__audio_energy": 0.0,
+      "semantic_importance__hero_score": 0.0,
+      "emotional_intensity__visual_interest": 0.0,
+      "emotional_intensity__audio_energy": 0.0,
+      "emotional_intensity__hero_score": 0.0,
+      "visual_interest__audio_energy": -0.5781530151337745,
+      "visual_interest__hero_score": -0.38395972225475916,
+      "audio_energy__hero_score": 0.9736862521164389
+    },
+    "summary": {
+      "duration_seconds": 19,
+      "content_type": "vlog",
+      "hero_moment_count": 0,
+      "dead_zone_count": 0,
+      "dead_zone_total_seconds": 0,
+      "avg_hero_score": 0.12846067175050313,
+      "max_hero_score": 0.15149343030738321,
+      "dimension_correlations": {
+        "semantic_importance__emotional_intensity": 0.0,
+        "semantic_importance__visual_interest": 0.0,
+        "semantic_importance__audio_energy": 0.0,
+        "semantic_importance__hero_score": 0.0,
+        "emotional_intensity__visual_interest": 0.0,
+        "emotional_intensity__audio_energy": 0.0,
+        "emotional_intensity__hero_score": 0.0,
+        "visual_interest__audio_energy": -0.5781530151337745,
+        "visual_interest__hero_score": -0.38395972225475916,
+        "audio_energy__hero_score": 0.9736862521164389
+      }
+    }
+  },
+  "cut_points": [
+    {
+      "timestamp": 10.24,
+      "composite_score": 0.7570000000000001,
+      "emotion": 0.9,
+      "story": 0.6,
+      "rhythm": 0.8,
+      "eye_trace": 0.5,
+      "plane_2d": 0.5,
+      "space_3d": 0.5,
+      "boundary_reasons": [
+        "beat"
+      ],
+      "reasoning": "strong emotional continuity (0.90); good rhythm (0.80); boundary: beat"
+    },
+    {
+      "timestamp": 17.54,
+      "composite_score": 0.7570000000000001,
+      "emotion": 0.9,
+      "story": 0.6,
+      "rhythm": 0.8,
+      "eye_trace": 0.5,
+      "plane_2d": 0.5,
+      "space_3d": 0.5,
+      "boundary_reasons": [
+        "beat"
+      ],
+      "reasoning": "strong emotional continuity (0.90); good rhythm (0.80); boundary: beat"
+    },
+    {
+      "timestamp": 2.56,
+      "composite_score": 0.7170000000000001,
+      "emotion": 0.9,
+      "story": 0.6,
+      "rhythm": 0.4,
+      "eye_trace": 0.5,
+      "plane_2d": 0.5,
+      "space_3d": 0.5,
+      "boundary_reasons": [
+        "beat"
+      ],
+      "reasoning": "strong emotional continuity (0.90); boundary: beat"
+    }
+  ],
+  "paced_plan": {
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 2.56,
+        "keep": true,
+        "reason": "short_segment (2.6s < min 5.0s)",
+        "pacing_score": 0.6
+      },
+      {
+        "start": 2.56,
+        "end": 10.24,
+        "keep": true,
+        "reason": "on_target (7.7s \u2248 7.0s)",
+        "pacing_score": 0.9
+      },
+      {
+        "start": 10.24,
+        "end": 17.54,
+        "keep": true,
+        "reason": "on_target (7.3s \u2248 7.0s)",
+        "pacing_score": 0.9
+      },
+      {
+        "start": 17.54,
+        "end": 19.366667,
+        "keep": true,
+        "reason": "short_segment (1.8s < min 5.0s)",
+        "pacing_score": 0.6
+      }
+    ],
+    "total_kept_duration": 19.366667,
+    "total_cut_duration": 0,
+    "hook_window_satisfied": false,
+    "hook_window_reason": "missing hook modality: verbal",
+    "pacing_violations": [
+      "2 of 4 segments shorter than min interrupt (5.0s) \u2014 choppy"
+    ],
+    "summary": {
+      "content_type": "vlog",
+      "total_segments": 4,
+      "kept_segments": 4,
+      "cut_segments": 0,
+      "total_kept_duration": 19.37,
+      "total_cut_duration": 0,
+      "compression_ratio": 1.0,
+      "avg_shot_length": 4.84,
+      "hook_window_satisfied": false,
+      "pacing_violation_count": 1
+    }
+  },
+  "slowmo_proposals": [],
+  "music_sync_plan": {
+    "structure": null,
+    "aligned_cuts": [
+      {
+        "original_ts": 10.24,
+        "aligned_ts": 10.24,
+        "alignment_type": "none",
+        "delta": 0.0,
+        "cut_point": {
+          "timestamp": 10.24,
+          "composite_score": 0.7570000000000001,
+          "emotion": 0.9,
+          "story": 0.6,
+          "rhythm": 0.8,
+          "eye_trace": 0.5,
+          "plane_2d": 0.5,
+          "space_3d": 0.5,
+          "boundary_reasons": [
+            "beat"
+          ],
+          "reasoning": "strong emotional continuity (0.90); good rhythm (0.80); boundary: beat"
+        }
+      },
+      {
+        "original_ts": 17.54,
+        "aligned_ts": 17.54,
+        "alignment_type": "none",
+        "delta": 0.0,
+        "cut_point": {
+          "timestamp": 17.54,
+          "composite_score": 0.7570000000000001,
+          "emotion": 0.9,
+          "story": 0.6,
+          "rhythm": 0.8,
+          "eye_trace": 0.5,
+          "plane_2d": 0.5,
+          "space_3d": 0.5,
+          "boundary_reasons": [
+            "beat"
+          ],
+          "reasoning": "strong emotional continuity (0.90); good rhythm (0.80); boundary: beat"
+        }
+      },
+      {
+        "original_ts": 2.56,
+        "aligned_ts": 2.56,
+        "alignment_type": "none",
+        "delta": 0.0,
+        "cut_point": {
+          "timestamp": 2.56,
+          "composite_score": 0.7170000000000001,
+          "emotion": 0.9,
+          "story": 0.6,
+          "rhythm": 0.4,
+          "eye_trace": 0.5,
+          "plane_2d": 0.5,
+          "space_3d": 0.5,
+          "boundary_reasons": [
+            "beat"
+          ],
+          "reasoning": "strong emotional continuity (0.90); boundary: beat"
+        }
+      }
+    ],
+    "ducking": null,
+    "reasoning": "no music track separated \u2014 skip music sync"
+  },
+  "hero_moments": [
+    {
+      "start": 2.066666666666667,
+      "end": 4.066666666666666,
+      "level": 1,
+      "label": "notable_moment",
+      "fusion_reasoning": "Level 1 (notable_moment): visual peak at 3.07s (score 0.76) \u2014 motion peak \u03c3=3.03 at 3.07s; Geometric mean: 0.758.",
+      "modalities": [
+        "visual"
+      ],
+      "peak_timestamps": {
+        "visual": 3.066666666666667
+      },
+      "peak_scores": {
+        "visual": 0.758373073068836
+      },
+      "geometric_mean": 0.758373073068836
+    },
+    {
+      "start": 0,
+      "end": 1.096,
+      "level": 1,
+      "label": "notable_moment",
+      "fusion_reasoning": "Level 1 (notable_moment): audio peak at 0.10s (score 0.70) \u2014 audio onset at 0.10s; Geometric mean: 0.700.",
+      "modalities": [
+        "audio"
+      ],
+      "peak_timestamps": {
+        "audio": 0.096
+      },
+      "peak_scores": {
+        "audio": 0.7
+      },
+      "geometric_mean": 0.7
+    },
+    {
+      "start": 4.536,
+      "end": 6.536,
+      "level": 1,
+      "label": "notable_moment",
+      "fusion_reasoning": "Level 1 (notable_moment): audio peak at 5.54s (score 0.70) \u2014 audio onset at 5.54s; Geometric mean: 0.700.",
+      "modalities": [
+        "audio"
+      ],
+      "peak_timestamps": {
+        "audio": 5.536
+      },
+      "peak_scores": {
+        "audio": 0.7
+      },
+      "geometric_mean": 0.7
+    },
+    {
+      "start": 4.728,
+      "end": 6.728,
+      "level": 1,
+      "label": "notable_moment",
+      "fusion_reasoning": "Level 1 (notable_moment): audio peak at 5.73s (score 0.70) \u2014 audio onset at 5.73s; Geometric mean: 0.700.",
+      "modalities": [
+        "audio"
+      ],
+      "peak_timestamps": {
+        "audio": 5.728
+      },
+      "peak_scores": {
+        "audio": 0.7
+      },
+      "geometric_mean": 0.7
+    },
+    {
+      "start": 7.800000000000001,
+      "end": 9.8,
+      "level": 1,
+      "label": "notable_moment",
+      "fusion_reasoning": "Level 1 (notable_moment): audio peak at 8.80s (score 0.70) \u2014 audio onset at 8.80s; Geometric mean: 0.700.",
+      "modalities": [
+        "audio"
+      ],
+      "peak_timestamps": {
+        "audio": 8.8
+      },
+      "peak_scores": {
+        "audio": 0.7
+      },
+      "geometric_mean": 0.7
+    },
+    {
+      "start": 8.216,
+      "end": 10.216,
+      "level": 1,
+      "label": "notable_moment",
+      "fusion_reasoning": "Level 1 (notable_moment): audio peak at 9.22s (score 0.70) \u2014 audio onset at 9.22s; Geometric mean: 0.700.",
+      "modalities": [
+        "audio"
+      ],
+      "peak_timestamps": {
+        "audio": 9.216
+      },
+      "peak_scores": {
+        "audio": 0.7
+      },
+      "geometric_mean": 0.7
+    }
+  ]
+}
