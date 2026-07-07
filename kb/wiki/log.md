@@ -139,3 +139,42 @@ Architected, built, and verified the Unified Adapter — a single import surface
 - mcp_video wins for: info, trim, resize, speed, stabilize, color_grade, text_subtitles
 - ffmpeg_adapter wins for: merge, silence_remove, transcribe (buggy/inferior in mcp_video)
 - ffmpeg_adapter unique: J/L-cuts, scopes, quality metrics, project files, render profiles, loudnorm
+
+## [2026-07-07] upgrade | Recipe Packs — 6 YAML workflow templates
+
+Created `recipes/` directory with 6 one-command YAML recipe packs for common video editing patterns:
+
+- **Podcast-to-shorts** — extract 30-60s engaging segments, format as TikTok/Reels shorts
+- **Wedding highlights** — extract key moments (vows, first kiss, speeches, first dance), color grade, add music bed
+- **Sports highlights** — beat-synced action reel with speed ramping (pre-roll slow → impact → slow-mo release)
+- **Documentary assembly** — transcript-first, topic-segmented, B-roll overlay with J/L-cuts
+- **Tutorial editing** — screen + face PiP, chapter markers, callout animations
+- **Vlog assembly** — montage-style with music bed, fast pacing, dynamic transitions
+
+Created `kb/tools/recipe_runner.py` — YAML recipe executor with variable substitution, parallel for_each loops, quality gates, and output manifest generation.
+
+## [2026-07-07] upgrade | MLT XML Export — NLE Interoperability
+
+Created `kb/tools/mlt_export.py` — converts `.aevp` project files to MLT XML format compatible with Kdenlive and Shotcut. Supports round-trip: trim, merge (xfade), resize, color_grade, text_subtitles, speed changes, and J/L-cuts. Added `render_mlt()` for headless melt rendering and `export_fcpxml()` for Final Cut Pro handoff via OpenTimelineIO.
+
+## [2026-07-07] upgrade | Compliance Reporter — 6 Delivery Specs
+
+Created `kb/tools/compliance.py` — checks videos against EBU R128, ATSC A/85, Netflix Sound Mix, BBC, YouTube, and TikTok streaming specs. Reports pass/fail per metric (LUFS, true-peak, LRA, stream integrity, VMAF). Outputs markdown or JSON reports.
+
+## [2026-07-07] upgrade | Content Adapter — Pexels + Freesound
+
+Created `kb/tools/content_adapter.py` — parallel to music_adapter. Provides `footage.search()`/`footage.download()` for Pexels video API (CC0, 30k+ clips) and `sfx.search()`/`sfx.download()` for Freesound API (500k+ SFX). Includes license sidecars (.license.json), NC filtering, LUT pack helpers (IWLTBAP).
+
+## [2026-07-07] upgrade | VLM Adapter — Visual Perception (Gated)
+
+Created `kb/tools/vlm_adapter.py` — gated/opt-in adapter for Qwen2.5-VL visual queries. Provides `describe_frame()`, `describe_clip()`, `find_moment()`, and `verify_claim()`. OFF by default — requires `VLM_ENABLED=1` env var and `ollama pull qwen2.5-vl:7b`.
+
+## [2026-07-07] integrate | Unified adapter — all new modules registered
+
+Updated `kb/tools/unified_adapter.py` with `compliance_report`, `export_mlt`, `render_mlt`, `export_fcpxml`, `run_recipe`, `footage`, `sfx`, `lut_list`, `lut_apply`, `vlm` — all accessible via single import.
+
+## [2026-07-07] update | CLAUDE.md, AGENTS.md, README.md, SKILL.md, agent-prompt.md
+
+Updated all configuration and documentation files to reflect new capabilities. Added recipe packs section to SKILL.md core stack. Updated CLI documentation with recipe runner and compliance reporter examples.
+
+Current tally: 16 active entities, 9 archived entities, 4 concepts, 5 guides, 3 comparisons, 1 chart, 6 recipes, 0 sources, plus SKILL.md at root level.

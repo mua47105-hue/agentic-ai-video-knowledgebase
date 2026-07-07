@@ -1,0 +1,81 @@
+name: tutorial-editing
+description: Screen recording with face camera PiP, chapter markers, and callout animations
+version: 1.0
+content_type: tutorial
+target_platform: youtube
+output_lufs: -16
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: silence_remove
+    tool: edit.silence_remove
+    params:
+      threshold: -50
+      min_silence: 0.4
+      padding: 0.2
+
+  - operation: auto_chapters
+    tool: edit.auto_chapters
+    params:
+      threshold: 0.25
+    output: chapters
+
+  - operation: for_each_chapter
+    parallel: false
+    loop_var: chapter
+    source: chapters
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$chapter.start"
+          duration: "$chapter.duration"
+          accurate: true
+
+      - operation: layout_pip
+        tool: edit.layout_pip
+        params:
+          position: bottom-right
+          scale: 0.25
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: youtube-1080p
+
+  - operation: merge_chapters
+    tool: edit.merge
+    params:
+      transition: fade
+      transition_duration: 0.3
+
+  - operation: add_captions
+    tool: edit.text_subtitles
+    params:
+      style: tutorial
+      max_lines: 2
+      chars_per_line: 42
+
+  - operation: loudnorm
+    tool: edit.loudnorm_limited
+    params:
+      target_lufs: -16
+      true_peak: -1.0
+
+  - operation: render
+    tool: edit.render
+    params:
+      profile: youtube-1080p
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc

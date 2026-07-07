@@ -23,6 +23,17 @@ updated: 2026-07-06
 - [Build Your Own AI Video Editor](guides/build-your-own-ai-video-editor) — 5-level blueprint, decision flowchart, install script
 - [FFmpeg Command Reference](guides/ffmpeg-command-reference) — 17 categories, probing to batch processing
 - [Local LLM Setup](guides/local-llm-setup) — Qwen2.5-Coder, Ollama integration, RAG for FFmpeg accuracy
+- [Recipe Packs](guides/recipe-packs) — one-command YAML workflow templates for common edit patterns
+
+## Extended Tools
+
+- [Recipe Runner](tools/recipe-runner) — YAML recipe executor for one-command video workflows
+- [MLT XML Export](tools/mlt-export) — NLE interoperability via Kdenlive/Shotcut-compatible XML
+- [Compliance Reporter](tools/compliance-reporter) — check videos against EBU R128, Netflix, YouTube, TikTok specs
+- [Content Adapter](tools/content-adapter) — stock footage (Pexels) + SFX (Freesound) with license sidecars
+- [VLM Adapter](tools/vlm-adapter) — visual perception via Qwen2.5-VL (gated/opt-in)
+
+
 
 ## Entities — MCP & Tooling
 

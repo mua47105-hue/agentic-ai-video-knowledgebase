@@ -14,12 +14,13 @@ Your job is to build and maintain a structured wiki about AI agents that EDIT ex
 ├── CLAUDE.md              # This file — your complete instructions
 ├── README.md              # Human-readable overview
 ├── SKILL.md               # AI video editing agent skill (auto-discoverable)
+├── recipes/                # YAML recipe packs (one command → finished video)
 ├── scripts/
 │   ├── setup.sh           # One-command install: FFmpeg + MCP + Whisper + Ollama
 │   └── agent-prompt.md    # Universal copy-paste prompt for any LLM agent
 ├── kb/
 │   ├── raw/               # Source documents (immutable — you read, never write)
-│   │   └── assets/        # Images, diagrams from sources
+│   │   └── assets/        # Images, diagrams, footage, SFX, LUTs from sources
 │   ├── wiki/
 │   │   ├── index.md       # Content catalog (all pages listed by category)
 │   │   ├── log.md         # Chronological record of all operations
@@ -33,8 +34,13 @@ Your job is to build and maintain a structured wiki about AI agents that EDIT ex
 │   ├── schema/
 │   │   └── AGENTS.md      # Reference copy of this schema
 │   └── tools/
-│       ├── search.py      # CLI search tool over wiki pages
-│       └── chart_models.py # Chart generator
+│       ├── search.py          # CLI search tool over wiki pages
+│       ├── chart_models.py    # Chart generator
+│       ├── recipe_runner.py   # YAML recipe pack executor
+│       ├── mlt_export.py      # MLT XML export for NLE interoperability
+│       ├── compliance.py      # Broadcast/streaming compliance reporter
+│       ├── content_adapter.py # Pexels + Freesound stock content acquisition
+│       └── vlm_adapter.py     # Visual perception adapter (Qwen2.5-VL, gated)
 ```
 
 ## Page conventions
@@ -144,3 +150,8 @@ Pass `--help` for options.
 | `kb/wiki/overview.md` | Living top-level synthesis |
 | `kb/tools/search.py` | Search CLI — `python3 kb/tools/search.py "query"` |
 | `kb/tools/chart_models.py` | Chart generator — `python3 kb/tools/chart_models.py` |
+| `kb/tools/recipe_runner.py` | Recipe runner — `python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml input.mp4` |
+| `kb/tools/mlt_export.py` | MLT XML export — `from kb.tools.mlt_export import export_mlt` |
+| `kb/tools/compliance.py` | Compliance reporter — `from kb.tools.compliance import compliance_report` |
+| `kb/tools/content_adapter.py` | Pexels/Freesound adapter — `from kb.tools.content_adapter import footage, sfx` |
+| `kb/tools/vlm_adapter.py` | VLM adapter (gated) — `from kb.tools.vlm_adapter import vlm` |

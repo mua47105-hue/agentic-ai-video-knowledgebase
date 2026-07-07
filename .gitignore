@@ -14,5 +14,15 @@ venv/
 .DS_Store
 Thumbs.db
 
+# Recipe pack output directories
+*.output/
+*.manifest.json
+
+# Downloaded content assets
+kb/raw/assets/footage/
+kb/raw/assets/sfx/
+kb/raw/assets/luts/
+kb/raw/assets/.search_cache/
+
 # Raw assets (large, not tracked by default — uncomment if needed)
 # raw/assets/

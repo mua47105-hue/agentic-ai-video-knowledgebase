@@ -1,0 +1,102 @@
+name: wedding-highlights
+description: Extract 2-4 minute highlight reel from wedding ceremony + reception footage
+version: 1.0
+content_type: cinematic
+target_platform: youtube
+output_lufs: -16
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: scene_detect
+    tool: edit.detect_scenes
+    params:
+      threshold: 0.35
+    output: scenes
+
+  - operation: silence_remove
+    tool: edit.silence_remove
+    params:
+      threshold: -50
+      min_silence: 0.5
+      padding: 0.3
+
+  - operation: find_key_moments
+    tool: recipe.find_key_moments
+    params:
+      categories: [vows, first_kiss, walk, speech, first_dance, cake, exit]
+      max_duration_per_moment: 45
+    output: moments_list
+
+  - operation: for_each_moment
+    parallel: false
+    loop_var: moment
+    source: moments_list
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$moment.start"
+          duration: "$moment.duration"
+          accurate: true
+
+      - operation: color_grade
+        tool: edit.color_grade
+        params:
+          style: warm
+
+      - operation: speed
+        tool: edit.speed
+        params:
+          factor: 1.0
+      - operation: render
+        tool: edit.render
+        params:
+          profile: youtube-1080p
+
+  - operation: merge_moments
+    tool: edit.merge
+    params:
+      transition: fade
+      transition_duration: 0.8
+    output: merged_highlight
+
+  - operation: add_music
+    tool: music.download
+    params:
+      query: romantic piano
+      duration_min: 120
+    output: music_track
+
+  - operation: overlay_music
+    tool: edit.add_audio
+    params:
+      input: "$merged_highlight"
+      audio: "$music_track.path"
+      mix_level: 0.3
+
+  - operation: loudnorm
+    tool: edit.loudnorm_limited
+    params:
+      target_lufs: -16
+      true_peak: -1.0
+
+  - operation: render
+    tool: edit.render
+    params:
+      profile: youtube-1080p
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: duration_within
+    min: 120
+    max: 300

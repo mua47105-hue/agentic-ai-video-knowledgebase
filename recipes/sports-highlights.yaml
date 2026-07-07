@@ -1,0 +1,73 @@
+name: sports-highlights
+description: Beat-synced sports highlight reel with slow-motion replays and transitions
+version: 1.0
+content_type: cinematic
+target_platform: youtube
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: scene_detect
+    tool: edit.detect_scenes
+    params:
+      threshold: 0.4
+    output: scenes
+
+  - operation: find_action_moments
+    tool: recipe.find_action_moments
+    params:
+      min_duration: 3
+      max_duration: 15
+      min_energy_threshold: 0.6
+    output: action_clips
+
+  - operation: for_each_moment
+    parallel: true
+    loop_var: clip
+    source: action_clips
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$clip.start"
+          duration: "$clip.duration"
+          accurate: true
+
+      - operation: speed_ramp
+        tool: recipe.speed_ramp
+        params:
+          pre_roll: 0.5
+          pre_speed: 0.5
+          impact_speed: 1.0
+          post_roll: 1.0
+          post_speed: 0.35
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: youtube-1080p
+
+  - operation: merge_clips
+    tool: edit.merge
+    params:
+      transition: fade
+      transition_duration: 0.3
+    output: merged_reel
+
+  - operation: loudnorm
+    tool: edit.loudnorm_limited
+    params:
+      target_lufs: -14
+      true_peak: -1.0
+
+  - operation: render
+    tool: edit.render
+    params:
+      profile: youtube-1080p
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc

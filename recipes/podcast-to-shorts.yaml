@@ -1,0 +1,80 @@
+name: podcast-to-shorts
+description: Extract 30-60s engaging segments from a podcast, format as TikTok/Reels shorts
+version: 1.0
+content_type: podcast
+target_platform: tiktok
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: silence_remove
+    tool: edit.silence_remove
+    params:
+      threshold: -50
+      min_silence: 0.5
+      padding: 0.3
+
+  - operation: auto_chapters
+    tool: edit.auto_chapters
+    params:
+      threshold: 0.3
+    output: chapters
+
+  - operation: find_segments
+    tool: recipe.find_engaging_segments
+    params:
+      min_duration: 30
+      max_duration: 60
+      criteria: [high_energy, quotable, clear_audio]
+    output: segment_list
+
+  - operation: for_each_segment
+    parallel: true
+    loop_var: segment
+    source: segment_list
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$segment.start"
+          duration: "$segment.duration"
+          accurate: true
+
+      - operation: resize_vertical
+        tool: edit.resize
+        params:
+          width: 1080
+          height: 1920
+
+      - operation: add_captions
+        tool: edit.text_subtitles
+        params:
+          style: tiktok_vertical
+          max_lines: 2
+          chars_per_line: 28
+
+      - operation: loudnorm
+        tool: edit.loudnorm_limited
+        params:
+          target_lufs: -14
+          true_peak: -1.0
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: tiktok-vertical
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: lufs_within_1db
+    target: -14

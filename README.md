@@ -42,19 +42,53 @@ python3 kb/tools/search.py "text to video" --json
 python3 kb/tools/chart_models.py
 ```
 
+### Run recipe packs (one-command video workflows)
+
+```bash
+# List available recipes
+python3 -m kb.tools.recipe_runner --list
+
+# Run a recipe
+python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml input.mp4 --output shorts/
+python3 -m kb.tools.recipe_runner recipes/wedding-highlights.yaml ceremony.mp4
+```
+
+### Check delivery compliance
+
+```bash
+python3 -c "
+from kb.tools.compliance import compliance_report
+report = compliance_report('output.mp4', 'youtube_streaming')
+print('Passed:', report['passed'])
+"
+```
+
 ## Structure
 
 ```
 agentic-ai-video-knowledgebase/
 ├── README.md
 ├── .gitignore
+├── recipes/              # YAML recipe packs (one-command video workflows)
+│   ├── podcast-to-shorts.yaml
+│   ├── wedding-highlights.yaml
+│   ├── sports-highlights.yaml
+│   ├── documentary-assembly.yaml
+│   ├── tutorial-editing.yaml
+│   └── vlog-assembly.yaml
 └── kb/
     ├── raw/              # Source documents (drop files here to ingest)
+    │   └── assets/       # Downloaded footage, SFX, LUTs, music
     ├── schema/
     │   └── AGENTS.md     # Instructions for LLM wiki maintainers
     ├── tools/
-    │   ├── search.py     # Hybrid BM25/vector search CLI
-    │   └── chart_models.py  # Matplotlib chart generator
+    │   ├── search.py           # Hybrid BM25/vector search CLI
+    │   ├── chart_models.py     # Matplotlib chart generator
+    │   ├── recipe_runner.py    # YAML recipe pack executor
+    │   ├── mlt_export.py       # MLT XML export for NLE interop
+    │   ├── compliance.py       # Broadcast/streaming compliance reporter
+    │   ├── content_adapter.py  # Pexels + Freesound stock acquisition
+    │   └── vlm_adapter.py      # Visual LLM (gated/opt-in)
     └── wiki/
         ├── index.md      # Content catalog
         ├── log.md        # Change log
@@ -82,6 +116,8 @@ Then:
 1. Drop a source article into `kb/raw/` and ask: "Ingest this source"
 2. Ask questions against the wiki — the agent searches pages and synthesizes answers
 3. Ask: "Lint the wiki" periodically to catch contradictions and orphans
+4. Run: `python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml input.mp4` for one-command video
+5. Run: `compliance_report('output.mp4', 'youtube_streaming')` for delivery compliance
 
 ### Adding Sources
 
@@ -92,12 +128,14 @@ Then:
 ## Current Contents (July 2026)
 
 - **25 entities** (16 active + 9 archived): MCP servers, Whisper ecosystem, video-use, MakeMyClip, CutAgent, CutRoom, VideoAgent, OpenMontage, Crayotter, UniVA, CutClaw, AVE, AI_Editor, Pilipili-AutoVideo, X-Cut, Project Montage + gen models archived
-- **3 concepts**: Multi-Agent Orchestration, Self-Evaluation Loop, Agentic vs Generative
+- **4 concepts**: Multi-Agent Orchestration, Self-Evaluation Loop, Agentic vs Generative, Unified Adapter
 - **3 comparisons**: MCP server matrix (12 servers), agentic frameworks (10 frameworks), AI video models
 - **Root-level SKILL.md**: Auto-discoverable by any LLM agent, complete video editing skill
-- **4 guides**: Free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint
+- **5 guides**: Free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint, recipe packs
 - **1 chart**: Model quality vs speed vs cost
+- **6 recipe packs**: Podcast-to-shorts, wedding highlights, sports highlights, documentary assembly, tutorial editing, vlog assembly
 - **Scripts**: One-command setup (`scripts/setup.sh`), universal agent prompt (`scripts/agent-prompt.md`)
+- **Extended tools**: MLT export, compliance reporter, content adapter (Pexels + Freesound), VLM adapter (gated)
 
 ## Requirements
 

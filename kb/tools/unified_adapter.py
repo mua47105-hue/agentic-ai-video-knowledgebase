@@ -201,6 +201,92 @@ class _MusicModule(_types.ModuleType):
 
 music = _MusicModule("music_adapter")
 
+# ═══════════════════════════════════════════════════════════
+# Compliance reporter
+# ═══════════════════════════════════════════════════════════
+
+from kb.tools.compliance import (
+    compliance_report,
+    list_specs,
+    COMPLIANCE_SPECS,
+)
+
+# ═══════════════════════════════════════════════════════════
+# MLT XML export
+# ═══════════════════════════════════════════════════════════
+
+from kb.tools.mlt_export import (
+    export_mlt,
+    render_mlt,
+    export_fcpxml,
+)
+
+# ═══════════════════════════════════════════════════════════
+# Recipe runner
+# ═══════════════════════════════════════════════════════════
+
+from kb.tools.recipe_runner import run_recipe
+
+# ═══════════════════════════════════════════════════════════
+# Content adapter (Pexels + Freesound)
+# ═══════════════════════════════════════════════════════════
+
+import kb.tools.content_adapter as _content_adapter
+
+class _FootageModule(_types.ModuleType):
+    """Convenience module: footage.search(), footage.download()"""
+
+    def search(self, query: str, **kwargs) -> list[dict]:
+        return _content_adapter.footage_search(query, **kwargs)
+
+    def download(self, track: dict, **kwargs) -> dict:
+        return _content_adapter.footage_download(track, **kwargs)
+
+footage = _FootageModule("content_adapter")
+
+class _SfxModule(_types.ModuleType):
+    """Convenience module: sfx.search(), sfx.download()"""
+
+    def search(self, query: str, **kwargs) -> list[dict]:
+        return _content_adapter.sfx_search(query, **kwargs)
+
+    def download(self, track: dict, **kwargs) -> dict:
+        return _content_adapter.sfx_download(track, **kwargs)
+
+sfx = _SfxModule("content_adapter")
+
+from kb.tools.content_adapter import (
+    lut_list,
+    lut_apply,
+)
+
+# ═══════════════════════════════════════════════════════════
+# VLM adapter (gated — Qwen2.5-VL)
+# ═══════════════════════════════════════════════════════════
+
+import kb.tools.vlm_adapter as _vlm_adapter
+
+class _VlmModule(_types.ModuleType):
+    """Convenience module: vlm.describe_frame(), vlm.find_moment(), etc."""
+
+    def describe_frame(self, video: str, timestamp: float, **kwargs) -> str:
+        return _vlm_adapter.describe_frame(video, timestamp, **kwargs)
+
+    def describe_clip(self, video: str, **kwargs) -> dict:
+        return _vlm_adapter.describe_clip(video, **kwargs)
+
+    def find_moment(self, video: str, query: str, **kwargs) -> list[dict]:
+        return _vlm_adapter.find_moment(video, query, **kwargs)
+
+    def verify_claim(self, video: str, timestamp: float, claim: str, **kwargs) -> dict:
+        return _vlm_adapter.verify_claim(video, timestamp, claim, **kwargs)
+
+    @property
+    def available(self) -> bool:
+        return _vlm_adapter._check_vlm()
+
+vlm = _VlmModule("vlm_adapter")
+
 # ═══════════════════════════════════════════════════════════════
 # Deprecation helpers — `from kb.tools.unified_adapter import edit`
 # ═══════════════════════════════════════════════════════════════
@@ -260,6 +346,16 @@ __all__ = [
     "scene_detect", "pip",
     # Music (adapter)
     "music",
+    # Content adapter
+    "footage", "sfx", "lut_list", "lut_apply",
+    # Compliance reporter
+    "compliance_report", "list_specs", "COMPLIANCE_SPECS",
+    # MLT export
+    "export_mlt", "render_mlt", "export_fcpxml",
+    # Recipe runner
+    "run_recipe",
+    # VLM adapter (gated)
+    "vlm",
     # Convenience
     "edit", "mcp_available",
 ]

@@ -48,12 +48,14 @@ The agent understands your intent, calls the right tools, and produces the finis
 - **Editing tools (16 active)**: MCP Servers, video-use, MakeMyClip, CutAgent, CutRoom, OpenMontage, AVE, AI_Editor, Crayotter, VideoAgent, UniVA, CutClaw, X-Cut, Pilipili-AutoVideo, Project Montage, Whisper Ecosystem
 - **MCP ecosystem**: 15+ free MCP servers for FFmpeg operations (119 tools in mcp-video) + 12-server comparison matrix
 - **Transcription**: Whisper ecosystem (whisper.cpp, faster-whisper, WhisperX)
-- **Guides**: Complete free stack setup, FFmpeg command reference (100+ patterns), local LLM setup (Qwen2.5-Coder 88% accuracy), build-your-own blueprint (5 levels)
+- **Guides**: Complete free stack setup, FFmpeg command reference (100+ patterns), local LLM setup (Qwen2.5-Coder 88% accuracy), build-your-own blueprint (5 levels), recipe packs (6 YAML workflows)
+- **Recipe packs**: 6 one-command YAML workflow templates (podcast-to-shorts, wedding highlights, sports highlights, documentary assembly, tutorial editing, vlog assembly)
 - **Skills**: `SKILL.md` at root — 5-phase decision engine, 12 Hard Rules, production techniques, MCP mappings
 - **Agent prompt**: `scripts/agent-prompt.md` — universal copy-paste system prompt for any LLM
 - **Setup script**: `scripts/setup.sh` — one-command install (FFmpeg + MCP + Whisper + Ollama)
 - **Comparisons**: MCP server feature matrix (12 servers, 30+ dimensions), 10 agentic frameworks, AI video models
 - **Charts**: Model quality vs speed vs cost (matplotlib)
+- **Extended tools**: MLT XML export (Kdenlive/Shotcut interop), compliance reporter (6 delivery specs), content adapter (Pexels + Freesound), VLM adapter (Qwen2.5-VL, gated)
 - **Archive (9 gen models)**: Runway Gen-4, Pika 2.5, Veo 3, Sora, Kling 3.0, Nano Banana, EzVideo, Shorz, Magicroll
 
 ## Key questions

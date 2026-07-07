@@ -66,8 +66,24 @@ check("edit.silence_remove works", 'ffmpeg_adapter' in ua.edit.silence_remove.__
 check("edit.j_cut works", 'ffmpeg_adapter' in ua.edit.j_cut.__module__)
 check("edit.hyperframes_init works", hasattr(ua.edit, 'hyperframes_init'))
 
-# 7. All __all__ symbols are callable or appropriate type
-non_callable = {'RENDER_PROFILES', 'mcp_available', 'edit', 'music'}
+# 7. New module routing checks
+check("compliance_report from compliance", 'compliance' in ua.compliance_report.__module__)
+check("list_specs from compliance", 'compliance' in ua.list_specs.__module__)
+check("export_mlt from mlt_export", 'mlt_export' in ua.export_mlt.__module__)
+check("render_mlt from mlt_export", 'mlt_export' in ua.render_mlt.__module__)
+check("run_recipe from recipe_runner", 'recipe_runner' in ua.run_recipe.__module__)
+check("lut_list from content_adapter", 'content_adapter' in ua.lut_list.__module__)
+check("footage module exists", hasattr(ua, 'footage'))
+check("sfx module exists", hasattr(ua, 'sfx'))
+check("vlm module exists", hasattr(ua, 'vlm'))
+check("footage.search callable", callable(ua.footage.search))
+check("sfx.search callable", callable(ua.sfx.search))
+check("vlm.describe_frame callable", callable(ua.vlm.describe_frame))
+check("vlm.find_moment callable", callable(ua.vlm.find_moment))
+check("vlm.verify_claim callable", callable(ua.vlm.verify_claim))
+
+# 8. All __all__ symbols are callable or appropriate type
+non_callable = {'RENDER_PROFILES', 'COMPLIANCE_SPECS', 'mcp_available', 'edit', 'music', 'footage', 'sfx', 'vlm'}
 for name in ua.__all__:
     if name in non_callable:
         continue

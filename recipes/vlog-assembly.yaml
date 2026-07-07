@@ -1,0 +1,101 @@
+name: vlog-assembly
+description: Montage-style vlog with music bed, fast pacing, and dynamic transitions
+version: 1.0
+content_type: vlog
+target_platform: youtube
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: scene_detect
+    tool: edit.detect_scenes
+    params:
+      threshold: 0.3
+    output: scenes
+
+  - operation: silence_remove
+    tool: edit.silence_remove
+    params:
+      threshold: -50
+      min_silence: 0.4
+      padding: 0.2
+
+  - operation: find_best_shots
+    tool: recipe.find_best_shots
+    params:
+      max_clips: 20
+      min_duration: 3
+      max_duration: 12
+    output: shots
+
+  - operation: music_search
+    tool: music.search
+    params:
+      query: upbeat vlog
+      duration_min: 60
+      instrumental_only: true
+    output: music_candidates
+
+  - operation: music_download
+    tool: music.download
+    params:
+      source: "$music_candidates.0"
+    output: music_track
+
+  - operation: for_each_shot
+    parallel: true
+    loop_var: shot
+    source: shots
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$shot.start"
+          duration: "$shot.duration"
+          accurate: true
+
+      - operation: color_grade
+        tool: edit.color_grade
+        params:
+          style: warm
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: youtube-1080p
+
+  - operation: merge_shots
+    tool: edit.merge
+    params:
+      transition: fade
+      transition_duration: 0.4
+
+  - operation: add_music
+    tool: edit.add_audio
+    params:
+      audio: "$music_track.path"
+      mix_level: 0.25
+
+  - operation: loudnorm
+    tool: edit.loudnorm_limited
+    params:
+      target_lufs: -14
+      true_peak: -1.0
+
+  - operation: render
+    tool: edit.render
+    params:
+      profile: youtube-1080p
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
