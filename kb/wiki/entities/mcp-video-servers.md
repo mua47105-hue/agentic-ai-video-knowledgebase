@@ -14,7 +14,7 @@ MCP (Model Context Protocol) servers let any AI agent (Claude Desktop, Cline, Cu
 
 ## Best Overall: mcp-video
 
-**mcp-video** ([KyaniteLabs/mcp-video](https://github.com/KyaniteLabs/mcp-video)) is the most comprehensive option with 119 tools.
+**mcp-video** ([KyaniteLabs/mcp-video](https://github.com/KyaniteLabs/mcp-video)) is the most comprehensive option with 106 tools.
 
 **Capabilities:**
 - Trim, merge, resize, crop, rotate, convert

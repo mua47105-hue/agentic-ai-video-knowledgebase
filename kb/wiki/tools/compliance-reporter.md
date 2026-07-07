@@ -4,6 +4,7 @@ type: entity
 tags: [tool, compliance, broadcast, streaming, lufs]
 created: 2026-07-07
 updated: 2026-07-07
+sources: [ebu-r128, itu-r-bs-1770-4, netflix-sound-mix-spec]
 related: [free-ai-video-editing-stack, ffmpeg-command-reference]
 ---
 

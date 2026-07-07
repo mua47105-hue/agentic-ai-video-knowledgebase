@@ -4,7 +4,7 @@ type: guide
 tags: [recipes, workflow, one-command, yaml]
 created: 2026-07-07
 updated: 2026-07-07
-related: [free-ai-video-editing-stack, build-your-own-ai-video-editor]
+related: [free-ai-video-editing-stack, build-your-own-ai-video-editor, multi-cam-editing, chroma-key]
 ---
 
 # Recipe Packs
@@ -21,6 +21,7 @@ The agent's decision engine already emits a JSON `plan` in Phase 3. But today th
 |--------|-------|--------|----------------|
 | `podcast-to-shorts.yaml` | Podcast episode (30-60 min) | 5 TikTok-ready shorts (30-60s each) | ~90s |
 | `wedding-highlights.yaml` | Ceremony + reception footage | 2-4 min highlight reel | ~5 min |
+| `shorts-punchy.yaml` | Any talking-head video | 15-30s punchy short with captions + music | ~60s |
 | `sports-highlights.yaml` | Game/match footage | Beat-synced action reel | ~3 min |
 | `documentary-assembly.yaml` | Interview + B-roll footage | Documentary with J/L-cuts | ~8 min |
 | `tutorial-editing.yaml` | Screen recording + face cam | Tutorial with PiP + chapters | ~4 min |
@@ -37,6 +38,9 @@ python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml my_podcast.mp4 
 
 # Run wedding highlights
 python3 -m kb.tools.recipe_runner recipes/wedding-highlights.yaml ceremony_and_reception.mp4
+
+# Run shorts-punchy
+python3 -m kb.tools.recipe_runner recipes/shorts-punchy.yaml talking_head.mp4
 ```
 
 ## How it works

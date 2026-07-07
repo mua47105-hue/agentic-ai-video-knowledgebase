@@ -2,7 +2,7 @@
 title: Wiki Index
 type: index
 created: 2026-07-06
-updated: 2026-07-06
+updated: 2026-07-08
 ---
 
 # Wiki Index
@@ -24,6 +24,7 @@ updated: 2026-07-06
 - [FFmpeg Command Reference](guides/ffmpeg-command-reference) — 17 categories, probing to batch processing
 - [Local LLM Setup](guides/local-llm-setup) — Qwen2.5-Coder, Ollama integration, RAG for FFmpeg accuracy
 - [Recipe Packs](guides/recipe-packs) — one-command YAML workflow templates for common edit patterns
+- [Hardware Acceleration](guides/hardware-acceleration) — NVENC, QSV, VideoToolbox encoding for faster renders
 
 ## Extended Tools
 
@@ -33,11 +34,10 @@ updated: 2026-07-06
 - [Content Adapter](tools/content-adapter) — stock footage (Pexels) + SFX (Freesound) with license sidecars
 - [VLM Adapter](tools/vlm-adapter) — visual perception via Qwen2.5-VL (gated/opt-in)
 
-
-
 ## Entities — MCP & Tooling
 
 - [mcp-video](entities/mcp-video) — MCP server, 106 tools, primary surface via unified adapter
+- [Hyperframes](entities/hyperframes) — Remotion-based kinetic text and animated overlays
 - [MCP Servers for Video Editing](entities/mcp-video-servers) — 15+ free MCP servers wrapping FFmpeg (119 tools in best)
 - [MakeMyClip Editor](entities/make-my-clip) — "FFmpeg you can talk to", zero-config, MIT
 - [CutAgent](entities/cutagent) — FFmpeg for AI agents, declarative EDL, structured JSON output
@@ -60,10 +60,13 @@ updated: 2026-07-06
 
 ## Concepts
 
-- [Unified Adapter](concepts/unified-adapter) — single import surface, routes 131 symbols to best implementation
+- [Unified Adapter](concepts/unified-adapter) — single import surface, routes 151 symbols to best implementation
 - [Multi-Agent Orchestration](concepts/multi-agent-orchestration) — how multiple AI agents coordinate in video editing
 - [Self-Evaluation Loop](concepts/self-evaluation-loop) — agents that score their own output and retry
 - [Agentic vs Generative](concepts/agentic-vs-generative) — the two layers of AI video editing
+- [Color-Space Management](concepts/color-space-management) — working in known color spaces before grading
+- [Multi-Cam Editing](concepts/multi-cam-editing) — synchronizing and switching between multiple camera angles
+- [Chroma Key / Green Screen](concepts/chroma-key) — replacing solid-color backgrounds with composited video
 
 ## Comparisons
 
@@ -73,13 +76,21 @@ updated: 2026-07-06
 
 ## Skills
 
-- [SKILL.md](../../SKILL.md) — Complete agent skill for AI video editing (root level, auto-discoverable). 5-phase decision engine, 12 Hard Rules, production techniques, MCP tool mappings, error recovery, contradiction log.
+- [SKILL.md](../../SKILL.md) — Complete agent skill for AI video editing (root level, auto-discoverable). 6-phase decision engine, 26 Hard Rules, production techniques, MCP tool mappings, error recovery, contradiction log.
 - [Agent Prompt](../../scripts/agent-prompt.md) — Universal copy-paste prompt for any LLM agent. CLASSIFY → PROBE → PLAN → BUILD → VERIFY workflow.
 - [Setup Script](../../scripts/setup.sh) — One-command install: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash`
 
 ## Charts
 
 - [Model Quality vs Speed vs Cost](charts/model-quality-speed-cost) — Matplotlib bubble chart comparing AI video models
+
+## Sources
+
+- [EBU R128](sources/ebu-r128) — broadcast loudness normalization specification
+- [ITU-R BS.1770-4](sources/itu-r-bs-1770-4) — loudness measurement algorithm standard
+- [Netflix Sound Mix Spec](sources/netflix-sound-mix-spec) — Netflix delivery audio specification
+- [ELLMPEG Paper](sources/ellmpeg-paper) — Qwen2.5-Coder 88% FFmpeg accuracy benchmark
+- [mcp-video Docs](sources/mcp-video-docs) — official mcp-video PyPI documentation
 
 ## Archive (Generative Models)
 

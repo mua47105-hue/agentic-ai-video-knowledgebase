@@ -301,6 +301,20 @@ _LUT_SOURCE_URL = "https://github.com/IWLTBAP/LUTs/archive/refs/heads/main.zip"
 _LUT_DIR_NAME = "iwltbap"
 
 
+def lut_download_pack() -> str:
+    """Download and extract the IWLTBAP LUT pack to the LUT directory."""
+    import io, zipfile
+    _LUT_DIR.mkdir(parents=True, exist_ok=True)
+    target = _LUT_DIR / _LUT_DIR_NAME
+    if target.exists():
+        return str(target)
+    r = requests.get(_LUT_SOURCE_URL, timeout=120)
+    r.raise_for_status()
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(_LUT_DIR)
+    return str(target)
+
+
 def lut_list() -> list[dict]:
     """Return available LUTs with license info from the LUT pack directory."""
     lut_dir = _LUT_DIR / _LUT_DIR_NAME
@@ -308,7 +322,9 @@ def lut_list() -> list[dict]:
         return [{"error": "LUT pack not downloaded. Run lut_download_pack() first."}]
 
     luts: list[dict] = []
-    for f in sorted(lut_dir.glob("*.{cube,png}")) if lut_dir.exists() else []:
+    cubes = sorted(lut_dir.glob("*.cube")) if lut_dir.exists() else []
+    pngs = sorted(lut_dir.glob("*.png")) if lut_dir.exists() else []
+    for f in cubes + pngs:
         luts.append({
             "name": f.stem,
             "path": str(f.resolve()),

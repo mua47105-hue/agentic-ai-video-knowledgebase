@@ -32,6 +32,28 @@ try:
 except ImportError:
     yaml = None  # type: ignore
 
+try:
+    from kb.tools.classifier import classify_video, recommend_recipe
+except ImportError:
+    classify_video = None  # type: ignore
+    recommend_recipe = None  # type: ignore
+
+try:
+    from kb.tools.auto_recover import RecoveryEngine, RecoveryResult
+except ImportError:
+    RecoveryEngine = None  # type: ignore
+    RecoveryResult = None  # type: ignore
+
+try:
+    from kb.tools.decision_log import DecisionLogger
+except ImportError:
+    DecisionLogger = None  # type: ignore
+
+
+class RecipeSubstitutionError(Exception):
+    """Raised when a $variable substitution in a recipe cannot be resolved cleanly."""
+    pass
+
 
 # ── Platform preset pack (Section 7) ──
 
@@ -119,7 +141,22 @@ def _substitute(value: t.Any, context: dict) -> t.Any:
                         cur = ""
                 else:
                     cur = ""
-            return str(cur) if cur is not None else ""
+            if cur is None:
+                return ""
+            if isinstance(cur, dict):
+                if "path" in cur:
+                    return str(cur["path"])
+                raise RecipeSubstitutionError(
+                    f"$var '{path}' resolved to a dict without a 'path' key. "
+                    f"Available keys: {list(cur.keys())}. Either use '$.{path}.path' or "
+                    f"ensure the upstream step produces a 'path' field."
+                )
+            if isinstance(cur, list):
+                raise RecipeSubstitutionError(
+                    f"$var '{path}' resolved to a list (len {len(cur)}). "
+                    f"Did you forget an index? E.g. '${path}.0'"
+                )
+            return str(cur)
         return re.sub(r"\$([\w.]+)", _replace_var, value)
     elif isinstance(value, dict):
         return {k: _substitute(v, context) for k, v in value.items()}
@@ -441,19 +478,19 @@ def snap_to_beats(
             new_seg["duration"] = (orig_end if new_end is None else new_end) - new_start
             if new_seg.get("_orig_start") is None:
                 new_seg["_orig_start"] = orig_start
-        if new_end is not None:
-            new_seg["duration"] = (new_start if new_start is not None else orig_start) - new_end
-            # If both nudged, duration is new_end - new_start
-            if new_start is not None:
-                new_seg["duration"] = new_end - new_start
+        if new_end is not None and new_start is not None:
+            new_seg["duration"] = new_end - new_start
 
         if new_start is None and new_end is not None:
             new_seg["start"] = orig_start
             new_seg["duration"] = new_end - orig_start
 
         if new_seg["duration"] <= 0:
-            new_seg["duration"] = seg["duration"]
-            new_seg["start"] = seg["start"]
+            raise ValueError(
+                f"snap_to_beats produced non-positive duration {new_seg['duration']:.3f}s "
+                f"(start={new_seg['start']}, end={orig_end}). "
+                f"Beat grid may be misaligned with content."
+            )
 
         updated.append(new_seg)
 
@@ -611,6 +648,20 @@ def _run_quality_gates(gates: list[dict], context: dict, output_path: str) -> li
     return results
 
 
+def _apply_post_process(strategy: str, params: dict, output_path: str) -> str:
+    if strategy == "add_silent_audio":
+        from kb.tools.ffmpeg_adapter import _run
+        temp = output_path + ".tmp.mp4"
+        _run([
+            "ffmpeg", "-i", output_path,
+            "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+            "-shortest", "-c:v", "copy", "-c:a", "aac", temp,
+        ], check=True)
+        os.replace(temp, output_path)
+        return output_path
+    return output_path
+
+
 # ── Step executor ──
 
 def _execute_step(step: dict, context: dict, input_path: str, output_dir: str) -> dict:
@@ -619,14 +670,23 @@ def _execute_step(step: dict, context: dict, input_path: str, output_dir: str) -
     params = _substitute(copy.deepcopy(step.get("params", {})), context)
     output_key = step.get("output", "")
 
-    if op == "for_each_segment":
+    if op.startswith("for_each_"):
         return _execute_loop(step, context, input_path, output_dir)
 
-    if op == "render":
-        params.setdefault("output", "")
+    fn = tool[5:] if tool.startswith("edit.") else ""
+    READ_ONLY_OPS = {"info", "transcribe", "detect_scenes", "quality_vmaf",
+                     "quality_full_qc", "scope_analyze", "verify"}
     if tool.startswith("edit."):
-        params.setdefault("input", input_path)
-        fn = tool[5:]
+        if "input" not in params:
+            if fn in READ_ONLY_OPS:
+                params["input"] = input_path
+            elif context.get("_last_output"):
+                params["input"] = context["_last_output"]
+            else:
+                params["input"] = input_path
+        if "output" not in params and fn not in READ_ONLY_OPS:
+            params["output"] = str(pathlib.Path(output_dir) / f"step_{context.get('_step_idx', 0):02d}_{fn}.mp4")
+
         from kb.tools.unified_adapter import edit
         caller = getattr(edit, fn, None)
         if caller is None:
@@ -634,6 +694,8 @@ def _execute_step(step: dict, context: dict, input_path: str, output_dir: str) -
         result = caller(**params)
         if isinstance(result, str):
             result = {"path": result}
+        if isinstance(result, dict) and result.get("path") and fn not in READ_ONLY_OPS:
+            context["_last_output"] = result["path"]
     elif tool.startswith("music."):
         fn = tool[6:]
         from kb.tools.unified_adapter import music
@@ -666,10 +728,11 @@ def _execute_loop(step: dict, context: dict, input_path: str, output_dir: str) -
     results: list[dict] = []
 
     def _run_one(item: dict, idx: int) -> dict:
-        ctx = {**context, loop_var: item}
+        ctx = {**context, loop_var: item, "_last_output": input_path, "_step_idx": 0}
         out = pathlib.Path(output_dir) / f"seg_{idx:04d}"
         out.mkdir(parents=True, exist_ok=True)
-        for ss in sub_steps:
+        for j, ss in enumerate(sub_steps):
+            ctx["_step_idx"] = j
             _execute_step(ss, ctx, input_path, str(out))
         return ctx
 
@@ -685,7 +748,7 @@ def _execute_loop(step: dict, context: dict, input_path: str, output_dir: str) -
         for i, item in enumerate(items):
             results.append(_run_one(item, i))
 
-    return {"operation": "for_each_segment", "count": len(items), "results": results}
+    return {"operation": op, "count": len(items), "results": results}
 
 
 # ── Main runner ──
@@ -695,6 +758,7 @@ def run_recipe(
     input_path: str,
     *,
     output_dir: str = "",
+    force_content_type: t.Optional[str] = None,
 ) -> dict:
     if yaml is None:
         raise ImportError("PyYAML is required. Install: pip install pyyaml")
@@ -711,19 +775,186 @@ def run_recipe(
     context: dict = {}
     step_results: list[dict] = []
 
+    # ── Decision logger ──
+    logger = DecisionLogger() if DecisionLogger is not None else None
+    if logger is not None:
+        context["_logger"] = logger
+
+    # ── Pre-run classification warning ──
+    classification: t.Optional[dict] = None
+    if classify_video is not None:
+        try:
+            classification = classify_video(input_path)
+            ct = classification.get("content_type", "unknown")
+            recipe_ct = recipe.get("content_type", "")
+            if force_content_type:
+                recipe["content_type"] = force_content_type
+                print(f"Info: Forcing content_type to '{force_content_type}' (was '{recipe_ct}')")
+            elif recipe_ct and ct != recipe_ct:
+                print(
+                    f"WARNING: Classifier detected '{ct}' but recipe expects '{recipe_ct}'",
+                    file=sys.stderr,
+                )
+                print(f"  Reasoning: {classification.get('reasoning', '')}", file=sys.stderr)
+                if recommend_recipe:
+                    rec = recommend_recipe(classification)
+                    if rec:
+                        print(f"  Consider: using recipe '{rec}' or --force-content-type", file=sys.stderr)
+            if logger is not None:
+                logger.log(
+                    type="classify",
+                    action=f"classified as '{ct}'",
+                    input=input_path,
+                    output=ct,
+                    reasoning=classification.get("reasoning", ""),
+                )
+        except Exception as e:
+            print(f"Note: Classifier unavailable: {e}", file=sys.stderr)
+
+    # ── Step execution ──
     for i, step in enumerate(recipe.get("steps", [])):
+        context["_step_idx"] = i
         step_result = _execute_step(step, context, input_path, str(out_path))
         step["_index"] = i
         step_result["step_index"] = i
         step_results.append(step_result)
+        if logger is not None:
+            logger.log(
+                type="recipe_step",
+                action=f"executed {step_result.get('operation', step_result.get('tool', 'unknown'))}",
+                output=step_result.get("output_key", ""),
+                reasoning=f"step index {i}",
+            )
 
-    final_output = str(out_path / "output.mp4")
-    if os.path.exists(final_output):
-        pass
+    # ── VLM highlight verification ──
+    if recipe.get("verify_moments") and context.get("moments_list"):
+        try:
+            from kb.tools.vlm_adapter import verify_highlights
+            vlm_results = verify_highlights(input_path, context["moments_list"])
+            context["_vlm_verification"] = vlm_results
+            if logger is not None:
+                for v in vlm_results:
+                    m = v.get("moment", {})
+                    logger.log(
+                        type="vlm_verify",
+                        action=f"verify '{m.get('category')}' @ {m.get('start', 0):.1f}s",
+                        output=v.get("verified"),
+                        reasoning=v.get("reasoning", ""),
+                        succeeded=v.get("verified") is not False,
+                    )
+        except Exception as e:
+            context["_vlm_verification_error"] = str(e)
 
-    gates = recipe.get("quality_gates", [])
-    quality_results = _run_quality_gates(gates, context, final_output) if gates else []
+    final_output = context.get("_last_output", "")
+    if not final_output:
+        quality_results = [{
+            "check": "edit.verify",
+            "passed": False,
+            "details": {"error": "no _last_output in context — recipe produced no renderable output"}
+        }]
+    else:
+        canonical = str(out_path / "output.mp4")
+        if final_output != canonical and os.path.exists(final_output):
+            try:
+                if os.path.exists(canonical):
+                    os.remove(canonical)
+                os.link(final_output, canonical)
+            except OSError:
+                import shutil
+                shutil.copy2(final_output, canonical)
+            final_output = canonical
 
+        gates = recipe.get("quality_gates", [])
+        quality_results = _run_quality_gates(gates, context, final_output) if gates else []
+
+    # ── Log quality gates ──
+    if logger is not None:
+        for g in quality_results:
+            logger.log(
+                type="gate_pass" if g.get("passed") else "gate_fail",
+                action=g.get("check", "unknown"),
+                output=g.get("passed"),
+                reasoning=str(g.get("details", "")),
+                succeeded=g.get("passed", False),
+            )
+
+    # ── Auto-recovery loop ──
+    recovery_engine = RecoveryEngine() if RecoveryEngine is not None else None
+    max_rounds = 3
+    recovery_attempts: list[dict] = []
+    round_num = 0
+
+    while (
+        recovery_engine is not None
+        and not all(g.get("passed", False) for g in quality_results)
+        and round_num < max_rounds
+    ):
+        round_num += 1
+        any_recovered = False
+        for gi, gate in enumerate(quality_results):
+            if gate.get("passed", False):
+                continue
+            plan = recovery_engine.can_recover(gate, context)
+            if plan is None:
+                continue
+            any_recovered = True
+            strategy = plan["strategy"]
+            step_idx = plan["step_index"]
+            overrides = plan["param_overrides"]
+
+            if step_idx >= 0:
+                step_copy = copy.deepcopy(recipe["steps"][step_idx])
+                step_copy.setdefault("params", {}).update(overrides)
+                step_result = _execute_step(step_copy, context, input_path, str(out_path))
+                step_result["step_index"] = step_idx
+                step_results.append(step_result)
+            elif strategy == "add_silent_audio":
+                final_output = _apply_post_process(strategy, overrides, final_output)
+
+            result_rr = RecoveryResult(
+                attempted=True,
+                strategy_name=strategy,
+                step_index=step_idx,
+                param_overrides=overrides,
+                retry_count=recovery_engine.retry_counts.get(step_idx, 0),
+                succeeded=False,
+                detail=f"round {round_num}",
+            )
+            recovery_engine.record_attempt(result_rr)
+            if logger is not None:
+                logger.log(
+                    type="recover",
+                    action=f"strategy '{strategy}' on step {step_idx}",
+                    input=overrides,
+                    output=False,
+                    reasoning=f"round {round_num}",
+                    succeeded=False,
+                )
+
+        if not any_recovered:
+            break
+
+        if final_output and os.path.exists(final_output):
+            quality_results = _run_quality_gates(gates, context, final_output)
+        else:
+            break
+
+    if recovery_engine is not None:
+        recovery_attempts = recovery_engine.summary()
+
+    # ── Failed VLM warnings ──
+    vlm_verification = context.get("_vlm_verification")
+    if vlm_verification:
+        failed = [v for v in vlm_verification
+                  if v.get("verified") is False and v.get("confidence", 0) > 0.7]
+        if failed:
+            print(f"\n[VLM] {len(failed)} moment(s) failed visual verification:", file=sys.stderr)
+            for fv in failed:
+                m = fv["moment"]
+                print(f"  - {m.get('category')} @ {m.get('start'):.1f}s: {fv['reasoning']}", file=sys.stderr)
+            print("  Consider manual review or re-running with different categories.\n", file=sys.stderr)
+
+    # ── Finalize manifest ──
     manifest = {
         "recipe": recipe.get("name", "unknown"),
         "version": recipe.get("version", "1.0"),
@@ -733,6 +964,10 @@ def run_recipe(
         "gates_passed": all(g.get("passed", False) for g in quality_results),
         "quality_gates": quality_results,
         "step_results": step_results,
+        "classification": classification,
+        "vlm_verification": vlm_verification,
+        "recovery_attempts": recovery_attempts,
+        "decision_log": logger.as_list() if logger is not None else [],
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
@@ -745,22 +980,71 @@ def run_recipe(
 
 def cli() -> None:
     parser = argparse.ArgumentParser(description="Run a recipe pack on input video")
-    parser.add_argument("recipe", help="Path to recipe YAML file")
-    parser.add_argument("input", help="Path to input video file")
+    parser.add_argument("recipe", nargs="?", help="Path to recipe YAML file (required unless --list or --recommend)")
+    parser.add_argument("input", nargs="?", help="Path to input video file (required unless --list)")
     parser.add_argument("--output", "-o", default="", help="Output directory")
     parser.add_argument("--list", action="store_true", help="List available recipes")
+    parser.add_argument("--recommend", action="store_true", help="Classify input and recommend a recipe, then exit")
+    parser.add_argument("--force-content-type", help="Override recipe content_type before execution")
+    parser.add_argument("--explain", action="store_true",
+                        help="After running, print the decision log in human-readable form")
     args = parser.parse_args()
 
     if args.list:
+        if yaml is None:
+            print("ERROR: PyYAML is required. Install: pip install pyyaml", file=sys.stderr)
+            sys.exit(1)
         recipes_dir = pathlib.Path(__file__).resolve().parent.parent.parent / "recipes"
+        if not recipes_dir.exists():
+            print(f"ERROR: recipes directory not found at {recipes_dir}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Available recipes in {recipes_dir}:")
+        print()
         for f in sorted(recipes_dir.glob("*.yaml")):
-            with open(f) as fh:
-                r = yaml.safe_load(fh)
-            print(f"  {f.name:<40s} {r.get('description', '')}")
+            try:
+                with open(f) as fh:
+                    r = yaml.safe_load(fh) or {}
+                name = r.get("name", f.stem)
+                desc = r.get("description", "")
+                ct = r.get("content_type", "?")
+                print(f"  {f.name:<35s} [{ct:<12s}] {desc}")
+            except yaml.YAMLError as e:
+                print(f"  {f.name:<35s} [PARSE ERROR] {e}")
         return
 
-    manifest = run_recipe(args.recipe, args.input, output_dir=args.output)
+    if args.recommend:
+        if not args.input:
+            parser.error("--recommend requires an input file")
+        if classify_video is None:
+            print("ERROR: classifier module not available (pip install -e .)", file=sys.stderr)
+            sys.exit(1)
+        result = classify_video(args.input)
+        rec = recommend_recipe(result) if recommend_recipe else None
+        output = {
+            "content_type": result["content_type"],
+            "confidence": result["confidence"],
+            "recommended_recipe": rec,
+            "reasoning": result["reasoning"],
+            "signals": {k: v for k, v in result.get("signals", {}).items() if isinstance(v, (int, float))},
+        }
+        print(json.dumps(output, indent=2, default=str))
+        sys.exit(0)
+
+    if not args.recipe or not args.input:
+        parser.error("recipe and input are required unless --list or --recommend is used")
+
+    manifest = run_recipe(args.recipe, args.input, output_dir=args.output, force_content_type=args.force_content_type)
     print(json.dumps(manifest, indent=2, default=str))
+
+    if args.explain:
+        log = manifest.get("decision_log", [])
+        print("\n=== DECISION LOG ===")
+        for d in log:
+            icon = "[OK]" if d.get("succeeded", True) else "[!]"
+            print(f"  {d['timestamp']} {icon} {d['type']:<18s} {d['action']}")
+            if d.get("reasoning"):
+                print(f"        reasoning: {d['reasoning'][:120]}")
+        print(f"\nTotal decisions: {len(log)}")
 
 
 if __name__ == "__main__":

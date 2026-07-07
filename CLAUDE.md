@@ -33,14 +33,23 @@ Your job is to build and maintain a structured wiki about AI agents that EDIT ex
 │   │   └── charts/        # Python-generated matplotlib charts
 │   ├── schema/
 │   │   └── AGENTS.md      # Reference copy of this schema
-│   └── tools/
-│       ├── search.py          # CLI search tool over wiki pages
-│       ├── chart_models.py    # Chart generator
-│       ├── recipe_runner.py   # YAML recipe pack executor
-│       ├── mlt_export.py      # MLT XML export for NLE interoperability
-│       ├── compliance.py      # Broadcast/streaming compliance reporter
-│       ├── content_adapter.py # Pexels + Freesound stock content acquisition
-│       └── vlm_adapter.py     # Visual perception adapter (Qwen2.5-VL, gated)
+    └── tools/
+        ├── search.py           # CLI search tool over wiki pages
+        ├── chart_models.py     # Chart generator
+        ├── recipe_runner.py    # YAML recipe pack executor
+        ├── mlt_export.py       # MLT XML export for NLE interoperability
+        ├── compliance.py       # Broadcast/streaming compliance reporter
+        ├── content_adapter.py  # Pexels + Freesound stock content acquisition
+        ├── vlm_adapter.py      # Visual perception adapter (Qwen2.5-VL, gated)
+        ├── auto_recover.py     # Bounded auto-retry engine for quality-gate failures
+        ├── classifier.py       # Rule-based content-type classifier
+        ├── decision_log.py     # Chronological decision audit logger
+        ├── music_adapter.py    # Music analysis, search, download
+        ├── reframe_adapter.py  # Smart video reframing
+        ├── caption_presets.py  # Subtitle/caption style presets
+        ├── ffmpeg_adapter.py   # Audited FFmpeg function wrappers
+        ├── unified_adapter.py  # Single import surface (151 symbols)
+        └── _mcp_bridge.py      # mcp_video safe wrapper bridge
 ```
 
 ## Page conventions
@@ -155,3 +164,9 @@ Pass `--help` for options.
 | `kb/tools/compliance.py` | Compliance reporter — `from kb.tools.compliance import compliance_report` |
 | `kb/tools/content_adapter.py` | Pexels/Freesound adapter — `from kb.tools.content_adapter import footage, sfx` |
 | `kb/tools/vlm_adapter.py` | VLM adapter (gated) — `from kb.tools.vlm_adapter import vlm` |
+| `kb/tools/auto_recover.py` | Auto-retry engine — `from kb.tools.auto_recover import RecoveryEngine` |
+| `kb/tools/classifier.py` | Content-type classifier — `from kb.tools.classifier import classify_video` |
+| `kb/tools/decision_log.py` | Decision logger — `from kb.tools.decision_log import DecisionLogger` |
+| `kb/tools/music_adapter.py` | Music analysis — `from kb.tools.music_adapter import music_describe, music_search` |
+| `kb/tools/reframe_adapter.py` | Reframe engine — `from kb.tools.reframe_adapter import smart_reframe` |
+| `kb/tools/unified_adapter.py` | Single import surface (151 symbols) — `from kb.tools.unified_adapter import edit` |

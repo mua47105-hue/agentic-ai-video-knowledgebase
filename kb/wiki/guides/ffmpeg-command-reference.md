@@ -632,6 +632,7 @@ ffmpeg -i main.mp4 -i overlay.mp4 -filter_complex \
 ```
 
 ### Chroma key (green screen)
+See the [Chroma Key](../concepts/chroma-key) concept page for parameter tuning and key-color detection.
 ```bash
 ffmpeg -i foreground.mp4 -i background.mp4 -filter_complex \
   "[0:v]chromakey=color=0x00FF00:similarity=0.1:blend=0.1[fg]; \
@@ -667,7 +668,10 @@ ffmpeg -i input.mp4 -c:v libx264 -b:v 4M -preset medium -pass 1 -f mp4 /dev/null
 ffmpeg -i input.mp4 -c:v libx264 -b:v 4M -preset medium -pass 2 -c:a aac -b:a 192k output.mp4
 ```
 
+For color-space conversion before grading, see [Color-Space Management](../concepts/color-space-management).
+
 ### Hardware acceleration (NVIDIA)
+See the [Hardware Acceleration](../guides/hardware-acceleration) guide for NVENC tuning and platform-specific commands.
 ```bash
 ffmpeg -i input.mp4 -c:v h264_nvenc -preset p4 -cq 23 -c:a aac output.mp4
 ```

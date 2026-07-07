@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-ai-video-knowledgebase"
+version = "0.7.0"
+description = "AI video editing agent + knowledge base. Free, open-source, local-first."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "mua47105-hue"}]
+keywords = ["video", "ai", "agent", "ffmpeg", "mcp", "whisper", "editing"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Multimedia :: Video",
+]
+
+dependencies = [
+    "pyyaml>=6.0,<7.0",
+    "numpy>=1.24,<3.0",
+    "requests>=2.31,<3.0",
+]
+
+[project.optional-dependencies]
+core = [
+    "matplotlib>=3.7,<4.0",
+    "pillow>=10.0,<12.0",
+    "sentence-transformers>=2.7,<5.0",
+]
+audio = [
+    "librosa>=0.10,<0.12",
+    "scipy>=1.11,<2.0",
+    "beautifulsoup4>=4.12,<5.0",
+]
+vision = [
+    "opencv-python>=4.8,<5.0",
+]
+nle = [
+    "opentimelineio>=0.17,<0.18",
+]
+mcp = [
+    "mcp-video>=1.5.1,<2.0",
+    "faster-whisper>=1.0,<2.0",
+]
+all = [
+    "agentic-ai-video-knowledgebase[core,audio,vision,nle,mcp]",
+]
+
+[project.scripts]
+recipe-runner = "kb.tools.recipe_runner:cli"
+kb-search = "kb.tools.search:main"
+
+[tool.setuptools]
+packages = ["kb", "kb.tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["scripts"]
+python_files = ["test_*.py", "verify_*.py"]
+python_functions = ["test_*", "run_tests"]
+addopts = "-v --tb=short"

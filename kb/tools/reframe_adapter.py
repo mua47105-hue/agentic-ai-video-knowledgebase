@@ -25,18 +25,18 @@ import os
 import pathlib
 import typing as t
 
-REFAME_ENABLED: bool = False
+REFRAME_ENABLED: bool = False
 try:
     import cv2
     import numpy as np
-    REFAME_ENABLED = True
+    REFRAME_ENABLED = True
 except ImportError:
     cv2 = None  # type: ignore
     np = None  # type: ignore
 
 
 def _check_reframe() -> None:
-    if not REFAME_ENABLED:
+    if not REFRAME_ENABLED:
         raise RuntimeError(
             "reframe_adapter requires opencv-python-headless.\n"
             "  pip install opencv-python-headless\n"
@@ -197,9 +197,9 @@ def _build_letterbox_filter(
     """Build FFmpeg filter for LETTERBOX (blurred background) strategy."""
     return (
         f"split[fg][bg];"
-        f"[bg]scale={target_w}:{target_h},gaussian_blur=sigma=20[b blurred];"
+        f"[bg]scale={target_w}:{target_h},gaussian_blur=sigma=20[b_blurred];"
         f"[fg]scale={target_w}:{target_h}:force_original_aspect_ratio=decrease[fg];"
-        f"[b blurred][fg]overlay=(W-w)/2:(H-h)/2"
+        f"[b_blurred][fg]overlay=(W-w)/2:(H-h)/2"
     )
 
 
@@ -252,7 +252,12 @@ def smart_reframe(
                          if s.get("codec_type") == "video"), {})
     orig_w = video_stream.get("width", 1920)
     orig_h = video_stream.get("height", 1080)
-    fps = eval(video_stream.get("avg_frame_rate", "30/1")) if isinstance(video_stream.get("avg_frame_rate"), str) else 30.0
+    from fractions import Fraction
+    fps_str = video_stream.get("avg_frame_rate", "30/1")
+    try:
+        fps = float(Fraction(fps_str))
+    except (ValueError, ZeroDivisionError):
+        fps = 30.0
 
     samples = _compute_crop_centers(input, target_width, target_height, scene_sample_rate)
     samples = _smooth_crop_path(samples, smoothing)

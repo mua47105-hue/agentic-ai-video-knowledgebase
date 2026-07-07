@@ -51,6 +51,12 @@ python3 -m kb.tools.recipe_runner --list
 # Run a recipe
 python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml input.mp4 --output shorts/
 python3 -m kb.tools.recipe_runner recipes/wedding-highlights.yaml ceremony.mp4
+
+# Auto-classify input and recommend a recipe
+python3 -m kb.tools.recipe_runner --recommend input.mp4
+
+# Override recipe content type
+python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml input.mp4 --force-content-type social-short
 ```
 
 ### Check delivery compliance
@@ -72,6 +78,7 @@ agentic-ai-video-knowledgebase/
 ├── recipes/              # YAML recipe packs (one-command video workflows)
 │   ├── podcast-to-shorts.yaml
 │   ├── wedding-highlights.yaml
+│   ├── shorts-punchy.yaml
 │   ├── sports-highlights.yaml
 │   ├── documentary-assembly.yaml
 │   ├── tutorial-editing.yaml
@@ -82,12 +89,21 @@ agentic-ai-video-knowledgebase/
     ├── schema/
     │   └── AGENTS.md     # Instructions for LLM wiki maintainers
     ├── tools/
-    │   ├── search.py           # Hybrid BM25/vector search CLI
+    │   ├── auto_recover.py     # Bounded auto-retry engine for quality-gate failures
+    │   ├── caption_presets.py  # Subtitle/caption style presets
     │   ├── chart_models.py     # Matplotlib chart generator
-    │   ├── recipe_runner.py    # YAML recipe pack executor
-    │   ├── mlt_export.py       # MLT XML export for NLE interop
+    │   ├── classifier.py       # Rule-based content-type classifier
     │   ├── compliance.py       # Broadcast/streaming compliance reporter
     │   ├── content_adapter.py  # Pexels + Freesound stock acquisition
+    │   ├── decision_log.py     # Chronological decision audit logger
+    │   ├── ffmpeg_adapter.py   # Audited FFmpeg function wrappers
+    │   ├── _mcp_bridge.py      # mcp_video safe wrapper bridge
+    │   ├── mlt_export.py       # MLT XML export for NLE interop
+    │   ├── music_adapter.py    # Music analysis, search, download
+    │   ├── recipe_runner.py    # YAML recipe pack executor
+    │   ├── reframe_adapter.py  # Smart video reframing (vertical/horizontal)
+    │   ├── search.py           # Hybrid BM25/vector search CLI
+    │   ├── unified_adapter.py  # Single import surface (151 symbols)
     │   └── vlm_adapter.py      # Visual LLM (gated/opt-in)
     └── wiki/
         ├── index.md      # Content catalog
@@ -127,15 +143,16 @@ Then:
 
 ## Current Contents (July 2026)
 
-- **25 entities** (16 active + 9 archived): MCP servers, Whisper ecosystem, video-use, MakeMyClip, CutAgent, CutRoom, VideoAgent, OpenMontage, Crayotter, UniVA, CutClaw, AVE, AI_Editor, Pilipili-AutoVideo, X-Cut, Project Montage + gen models archived
-- **4 concepts**: Multi-Agent Orchestration, Self-Evaluation Loop, Agentic vs Generative, Unified Adapter
+- **25 entities** (16 active + 9 archived): MCP servers, Whisper ecosystem, video-use, MakeMyClip, CutAgent, CutRoom, Hyperframes, VideoAgent, OpenMontage, Crayotter, UniVA, CutClaw, AVE, AI_Editor, Pilipili-AutoVideo, X-Cut, Project Montage + gen models archived
+- **7 concepts**: Multi-Agent Orchestration, Self-Evaluation Loop, Agentic vs Generative, Unified Adapter, Color-Space Management, Multi-Cam Editing, Chroma Key
 - **3 comparisons**: MCP server matrix (12 servers), agentic frameworks (10 frameworks), AI video models
 - **Root-level SKILL.md**: Auto-discoverable by any LLM agent, complete video editing skill
-- **5 guides**: Free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint, recipe packs
+- **6 guides**: Free stack setup, FFmpeg command reference, local LLM setup, build-your-own blueprint, recipe packs, hardware acceleration
 - **1 chart**: Model quality vs speed vs cost
 - **6 recipe packs**: Podcast-to-shorts, wedding highlights, sports highlights, documentary assembly, tutorial editing, vlog assembly
-- **Scripts**: One-command setup (`scripts/setup.sh`), universal agent prompt (`scripts/agent-prompt.md`)
-- **Extended tools**: MLT export, compliance reporter, content adapter (Pexels + Freesound), VLM adapter (gated)
+- **5 source pages**: EBU R128, ITU-R BS.1770-4, Netflix Sound Mix Spec, ELLMPEG paper, mcp-video docs
+- **Scripts**: One-command setup (`scripts/setup.sh`), universal agent prompt (`scripts/agent-prompt.md`), wiki lint (`scripts/lint_wiki.py`)
+- **Extended tools**: MLT export, compliance reporter, content adapter (Pexels + Freesound), VLM adapter (gated), decision logger, classifier, auto-recover engine
 
 ## Requirements
 

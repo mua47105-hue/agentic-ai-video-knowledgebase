@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  doctor:
+    name: Doctor (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[all]'
+          pip install pytest
+
+      - name: Run doctor
+        run: python scripts/doctor.py
+
+  parse-tests:
+    name: Parse & dispatch tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: pip install -e '.[core]' pyyaml
+      - run: python scripts/test_recipes_parse.py
+
+  e2e-tests:
+    name: End-to-end recipe tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: pip install -e '.[all]' pytest
+      - run: python scripts/make_synthetic_clip.py --all --out /tmp/clips/
+      - run: pytest scripts/test_recipes_e2e.py -v --tb=short
+        env:
+          VLM_ENABLED: "0"
+
+  unit-tests:
+    name: Module unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: pip install -e '.[all]' pytest
+      - run: |
+          for s in scripts/test_music_describe.py scripts/test_content_adapter.py scripts/test_vlm_adapter.py scripts/test_reframe_adapter.py scripts/test_chart_models.py scripts/test_search.py scripts/test_auto_recover.py scripts/test_classifier.py; do
+            python "$s" || exit 1
+          done
+
+  lint-wiki:
+    name: Wiki lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install pyyaml
+      - run: python scripts/lint_wiki.py --json | python3 -c "import json,sys; d=json.load(sys.stdin); exit(1 if d['summary']['broken_links']>0 else 0)"

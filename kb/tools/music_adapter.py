@@ -42,7 +42,7 @@ def _probe_json(path: str) -> dict:
 # ═══════════════════════════════════════════════════════════
 
 def music_describe(
-    audio_path: str,
+    audio_path: t.Optional[str] = None,
     *,
     detailed: bool = True,
     include_waveform: bool = False,
@@ -51,12 +51,13 @@ def music_describe(
     """
     Analyze any audio file and return its full 'taste profile'.
     Runs entirely locally using librosa + ffmpeg.  No API calls, no network.
+    Returns empty profile if audio_path is None (graceful for recipe use).
     """
+    if audio_path is None or not os.path.exists(audio_path):
+        return {"error": "no audio path provided", "bpm": None, "duration": 0, "beats": [], "downbeats": []}
+
     import librosa
     from scipy import signal as sg
-
-    if not os.path.exists(audio_path):
-        raise FileNotFoundError(audio_path)
 
     y, sr = librosa.load(audio_path, sr=None, mono=True)
     duration = float(len(y)) / sr
@@ -843,10 +844,8 @@ def _search_incompetech(query: str, top_k: int = 10, timeout: float = 8.0) -> li
             continue
         mp3_link = row.select_one("a[href$='.mp3']")
         if not mp3_link:
-            feats = td[1].get_text(strip=True) if len(td) > 1 else ""
-            mp3_url = mp3_link["href"] if mp3_link else ""
-        else:
-            mp3_url = mp3_link["href"]
+            continue
+        mp3_url = mp3_link["href"]
         if not mp3_url:
             continue
         if mp3_url.startswith("/"):
@@ -975,6 +974,120 @@ def write_license_sidecar(
     with open(lic_path, "w") as f:
         json.dump(license_data, f, indent=2)
     return license_data
+
+
+# ── Phase 4 addition: BPM/mood-aware ranking ──
+
+def rank_by_fit(
+    candidates: list[dict],
+    *,
+    target_bpm: float = None,
+    target_mood: str = None,
+    content_type: str = None,
+) -> list[dict]:
+    """
+    Re-rank music search candidates by fit to the edit's target pacing and mood.
+
+    For each candidate, downloads a short preview (first 30s), runs
+    ``music_describe`` to extract BPM/key/mood, then scores against the target.
+
+    Args:
+        candidates: list of track dicts from music_search()
+        target_bpm: desired BPM
+        target_mood: "happy" | "sad" | "energetic" | "calm" | "epic"
+        content_type: used to infer default target_bpm/mood if not specified
+
+    Returns: candidates sorted by fit_score descending, each augmented with
+        bpm, key, mood, fit_score, fit_reasoning.
+    """
+    CT_DEFAULTS = {
+        "vlog":          {"bpm": 100, "mood": "happy"},
+        "podcast":       {"bpm": None, "mood": "calm"},
+        "social-short":  {"bpm": 140, "mood": "energetic"},
+        "cinematic":     {"bpm": 80,  "mood": "epic"},
+        "tutorial":      {"bpm": 110, "mood": "calm"},
+        "sports":        {"bpm": 140, "mood": "energetic"},
+        "short_form":    {"bpm": 140, "mood": "energetic"},
+    }
+    if content_type and content_type in CT_DEFAULTS:
+        d = CT_DEFAULTS[content_type]
+        if target_bpm is None:
+            target_bpm = d["bpm"]
+        if target_mood is None:
+            target_mood = d["mood"]
+
+    if target_bpm is None and target_mood is None:
+        return candidates
+
+    import tempfile
+    scored: list[dict] = []
+    for cand in candidates:
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                tmp_path = tmp.name
+            _download_preview(cand, tmp_path, max_duration=30)
+            desc = music_describe(tmp_path)
+        except Exception as e:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            scored.append({**cand, "fit_score": 0.0, "fit_reasoning": f"describe failed: {e}"})
+            continue
+
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+        bpm = desc.get("bpm")
+        key = desc.get("key", "unknown")
+        mood_list = desc.get("mood", [])
+
+        score = 0.0
+        reasoning_parts: list[str] = []
+
+        if target_bpm and bpm:
+            delta = abs(bpm - target_bpm)
+            if delta <= 5:
+                bpm_score = 1.0
+            elif delta <= 20:
+                bpm_score = 0.5
+            elif delta <= 40:
+                bpm_score = 0.2
+            else:
+                bpm_score = 0.0
+            score += bpm_score
+            reasoning_parts.append(f"BPM {bpm} vs target {target_bpm} (\u0394{delta:.0f}, score {bpm_score})")
+
+        if target_mood:
+            mood_match = target_mood in mood_list
+            mood_score = 1.0 if mood_match else 0.3
+            score += mood_score
+            reasoning_parts.append(f"mood {mood_list} vs target '{target_mood}' (score {mood_score})")
+
+        max_score = (1.0 if target_bpm else 0.0) + (1.0 if target_mood else 0.0)
+        fit_score = score / max_score if max_score > 0 else 0.0
+
+        scored.append({
+            **cand,
+            "bpm": bpm,
+            "key": key,
+            "mood": mood_list,
+            "fit_score": round(fit_score, 3),
+            "fit_reasoning": "; ".join(reasoning_parts),
+        })
+
+    scored.sort(key=lambda x: x.get("fit_score", 0), reverse=True)
+    return scored
+
+
+def _download_preview(track: dict, output_path: str, max_duration: int = 30) -> None:
+    full_path = music_download(track, output_dir=os.path.dirname(output_path) or ".")
+    fpath = full_path.get("path") if isinstance(full_path, dict) else str(full_path)
+    if not fpath or not os.path.exists(fpath):
+        raise RuntimeError(f"download failed for {track.get('id')}")
+    subprocess.run(
+        ["ffmpeg", "-y", "-i", fpath, "-t", str(max_duration), "-c", "copy", output_path],
+        capture_output=True, check=True,
+    )
 
 
 # ── module alias (mirrors ffmpeg_adapter.py pattern) ──

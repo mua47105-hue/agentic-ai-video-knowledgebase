@@ -110,7 +110,7 @@ from kb.tools._mcp_bridge import (
     mcp_release_checkpoint as release_checkpoint,
     mcp_mograph_count as mograph_count,
     mcp_mograph_progress as mograph_progress,
-    mcp_filter as filter,
+    mcp_filter as mcp_filter,
     mcp_edit as edit_timeline,
     mcp_create_from_images as create_from_images,
     # Hyperframes (programmatic animation)
@@ -301,7 +301,7 @@ from kb.tools.caption_presets import caption_ass, text_subtitles_animated
 try:
     import kb.tools.reframe_adapter as _reframe_adapter
     smart_reframe = _reframe_adapter.smart_reframe
-    REFRAME_AVAILABLE = _reframe_adapter.REFAME_ENABLED
+    REFRAME_AVAILABLE = _reframe_adapter.REFRAME_ENABLED
 except Exception:
     smart_reframe = None  # type: ignore
     REFRAME_AVAILABLE = False
@@ -320,6 +320,10 @@ import sys as _sys
 
 class _UnifiedEditModule(_types.ModuleType):
     """Convenience module: edit.info(), edit.trim(), etc."""
+
+    @property
+    def filter(self):
+        return mcp_filter
 
 _unified_edit = _UnifiedEditModule("unified_adapter")
 _unified_edit.__dict__.update({k: v for k, v in globals().items() if not k.startswith("_")})
@@ -350,7 +354,7 @@ __all__ = [
     "read_metadata", "write_metadata", "extract_colors", "generate_palette",
     "batch", "repurpose", "repurpose_plan", "release_checkpoint",
     "mograph_count", "mograph_progress",
-    "filter", "edit_timeline", "create_from_images",
+    "mcp_filter", "edit_timeline", "create_from_images",
     "hyperframes_init", "hyperframes_info", "hyperframes_validate",
     "hyperframes_render", "hyperframes_preview", "hyperframes_snapshot",
     "hyperframes_still", "hyperframes_compositions", "hyperframes_capture",

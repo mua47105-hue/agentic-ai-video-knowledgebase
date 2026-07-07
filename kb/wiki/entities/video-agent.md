@@ -5,7 +5,7 @@ tags: [multi-agent, open-source, research, hku]
 created: 2026-07-06
 updated: 2026-07-06
 sources: []
-related: [crayotter, openmontage, univa]
+related: [crayotter, openmontage, univa, multi-cam-editing]
 ---
 
 # VideoAgent

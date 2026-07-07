@@ -4,6 +4,7 @@ version: 1.0
 content_type: cinematic
 target_platform: youtube
 output_lufs: -16
+verify_moments: true
 
 steps:
   - operation: probe
@@ -69,17 +70,31 @@ steps:
       transition_duration: 0.8
     output: merged_highlight
 
-  - operation: add_music
-    tool: music.download
+  - operation: music_search
+    tool: music.search
     params:
       query: romantic piano
       duration_min: 120
+      instrumental_only: true
+    output: music_candidates_raw
+
+  - operation: music_rank
+    tool: music.rank_by_fit
+    params:
+      candidates: "$music_candidates_raw"
+      content_type: cinematic
+    output: music_candidates
+
+  - operation: music_download
+    tool: music.download
+    params:
+      track: "$music_candidates.0"
     output: music_track
 
   - operation: overlay_music
     tool: edit.add_audio
     params:
-      input: "$merged_highlight"
+      input: "$merged_highlight.path"
       audio: "$music_track.path"
       mix_level: 0.3
 

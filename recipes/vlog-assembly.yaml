@@ -43,12 +43,19 @@ steps:
       query: upbeat vlog
       duration_min: 60
       instrumental_only: true
+    output: music_candidates_raw
+
+  - operation: music_rank
+    tool: music.rank_by_fit
+    params:
+      candidates: "$music_candidates_raw"
+      content_type: vlog
     output: music_candidates
 
   - operation: music_download
     tool: music.download
     params:
-      source: "$music_candidates.0"
+      track: "$music_candidates.0"
     output: music_track
 
   - operation: for_each_shot

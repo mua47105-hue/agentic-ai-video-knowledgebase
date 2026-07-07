@@ -326,9 +326,97 @@ class _VlmModule:
     def verify_claim(self, video: str, timestamp: float, claim: str, **kwargs) -> dict:
         return verify_claim(video, timestamp, claim, **kwargs)
 
+    def verify_highlights(
+        self, video_path: str, moments: list[dict], *, sample_stride: float = 1.0
+    ) -> list[dict]:
+        return verify_highlights(video_path, moments, sample_stride=sample_stride)
+
     @property
     def available(self) -> bool:
         return _check_vlm()
 
 
 vlm = _VlmModule()
+
+
+# ── Phase 4 addition: highlight moment verification ──
+
+def verify_highlights(
+    video_path: str,
+    moments: list[dict],
+    *,
+    sample_stride: float = 1.0,
+) -> list[dict]:
+    """
+    Verify that a list of picked highlight moments visually match their
+    claimed category using the VLM.
+
+    Each moment must have ``start``, ``end``, ``category``, and optionally
+    ``claim``.  If VLM is disabled, returns null-style entries.
+    """
+    if not VLM_AVAILABLE and not _check_vlm():
+        return [{
+            "moment": m,
+            "verified": None,
+            "confidence": 0.0,
+            "reasoning": "VLM disabled \u2014 set VLM_ENABLED=1 and pull qwen2.5-vl:7b",
+        } for m in moments]
+
+    results: list[dict] = []
+    for moment in moments:
+        start, end = moment["start"], moment["end"]
+        claim = moment.get("claim", moment.get("category", "unknown"))
+
+        timestamps = []
+        t = start
+        while t < end:
+            timestamps.append(t)
+            t += sample_stride
+
+        if not timestamps:
+            results.append({
+                "moment": moment,
+                "verified": False,
+                "confidence": 0.0,
+                "frames_sampled": 0,
+                "descriptions": [],
+                "reasoning": "moment has zero or negative duration",
+            })
+            continue
+
+        descriptions: list[str] = []
+        for ts in timestamps[:8]:
+            try:
+                desc = describe_frame(video_path, ts)
+                if isinstance(desc, dict):
+                    descriptions.append(desc.get("description", ""))
+                else:
+                    descriptions.append(str(desc))
+            except Exception as e:
+                descriptions.append(f"(error: {e})")
+
+        try:
+            verification = verify_claim(
+                video_path,
+                timestamp=start,
+                claim=f"This clip shows: {claim}",
+                samples=3,
+            )
+            verified = verification.get("verified", False)
+            confidence = verification.get("confidence", 0.0)
+            reasoning = verification.get("reasoning", "")
+        except Exception as e:
+            verified = False
+            confidence = 0.0
+            reasoning = f"verify_claim failed: {e}"
+
+        results.append({
+            "moment": moment,
+            "verified": verified,
+            "confidence": confidence,
+            "frames_sampled": len(timestamps),
+            "descriptions": descriptions,
+            "reasoning": reasoning,
+        })
+
+    return results

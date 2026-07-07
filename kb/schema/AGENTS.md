@@ -23,7 +23,22 @@ kb/
 ├── schema/
 │   └── AGENTS.md          # This file — the schema and conventions
 └── tools/
-    └── search.py          # CLI search tool over wiki pages
+    ├── auto_recover.py     # Bounded auto-retry engine for quality-gate failures
+    ├── caption_presets.py  # Subtitle/caption style presets
+    ├── chart_models.py     # Matplotlib chart generator
+    ├── classifier.py       # Rule-based content-type classifier
+    ├── compliance.py       # Broadcast/streaming compliance reporter
+    ├── content_adapter.py  # Pexels + Freesound stock acquisition
+    ├── decision_log.py     # Chronological decision audit logger
+    ├── ffmpeg_adapter.py   # Audited FFmpeg function wrappers
+    ├── _mcp_bridge.py      # mcp_video safe wrapper bridge
+    ├── mlt_export.py       # MLT XML export for NLE interop
+    ├── music_adapter.py    # Music analysis, search, download
+    ├── recipe_runner.py    # YAML recipe pack executor
+    ├── reframe_adapter.py  # Smart video reframing (vertical/horizontal)
+    ├── search.py           # Hybrid BM25/vector search CLI
+    ├── unified_adapter.py  # Single import surface (151 symbols)
+    └── vlm_adapter.py      # Visual LLM (gated/opt-in)
 ```
 
 ## Page conventions

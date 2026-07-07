@@ -46,11 +46,11 @@ The agent understands your intent, calls the right tools, and produces the finis
 ## Current wiki contents
 
 - **Editing tools (16 active)**: MCP Servers, video-use, MakeMyClip, CutAgent, CutRoom, OpenMontage, AVE, AI_Editor, Crayotter, VideoAgent, UniVA, CutClaw, X-Cut, Pilipili-AutoVideo, Project Montage, Whisper Ecosystem
-- **MCP ecosystem**: 15+ free MCP servers for FFmpeg operations (119 tools in mcp-video) + 12-server comparison matrix
+- **MCP ecosystem**: 15+ free MCP servers for FFmpeg operations (106 tools in mcp-video) + 12-server comparison matrix
 - **Transcription**: Whisper ecosystem (whisper.cpp, faster-whisper, WhisperX)
 - **Guides**: Complete free stack setup, FFmpeg command reference (100+ patterns), local LLM setup (Qwen2.5-Coder 88% accuracy), build-your-own blueprint (5 levels), recipe packs (6 YAML workflows)
 - **Recipe packs**: 6 one-command YAML workflow templates (podcast-to-shorts, wedding highlights, sports highlights, documentary assembly, tutorial editing, vlog assembly)
-- **Skills**: `SKILL.md` at root — 5-phase decision engine, 12 Hard Rules, production techniques, MCP mappings
+- **Skills**: `SKILL.md` at root — 6-phase decision engine, 26 Hard Rules, production techniques, MCP mappings
 - **Agent prompt**: `scripts/agent-prompt.md` — universal copy-paste system prompt for any LLM
 - **Setup script**: `scripts/setup.sh` — one-command install (FFmpeg + MCP + Whisper + Ollama)
 - **Comparisons**: MCP server feature matrix (12 servers, 30+ dimensions), 10 agentic frameworks, AI video models

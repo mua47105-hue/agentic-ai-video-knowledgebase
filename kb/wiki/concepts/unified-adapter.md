@@ -1,8 +1,9 @@
 ---
 title: Unified Adapter
 type: concept
+tags: [tool, architecture, adapter, mcp, ffmpeg]
 created: 2026-07-06
-updated: 2026-07-06
+updated: 2026-07-08
 ---
 
 # Unified Adapter
@@ -43,6 +44,8 @@ The unified adapter solves this by providing a single `edit` module that routes 
 └─────────────┘          └────────────────┘
 ```
 
+> For kinetic text and animated overlays via Remotion, see [Hyperframes](../entities/hyperframes). For color-space conversion before grading, see [Color-Space Management](../concepts/color-space-management).
+
 ## Symbols
 
 | Category | Source | Functions |
@@ -67,5 +70,5 @@ If `mcp_video` is not installed, the unified adapter still works — all ffmpeg_
 ## Related
 
 - [mcp-video](../entities/mcp-video) — the MCP server providing 106 tools
-- [SKILL.md](../../SKILL.md) — agent skill with all 25 Hard Rules
-- [ffmpeg_adapter.py](../../kb/tools/ffmpeg_adapter.py) — audited fallback (deprecated)
+- [SKILL.md](../../../SKILL.md) — agent skill with all 26 Hard Rules
+- [ffmpeg_adapter.py](../../tools/ffmpeg_adapter.py) — audited fallback (deprecated)

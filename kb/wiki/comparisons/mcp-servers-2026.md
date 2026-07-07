@@ -92,7 +92,7 @@ Comprehensive comparison of every known free/open-source MCP server for video ed
 
 | You want to... | Best Server | Why |
 |---------------|-------------|-----|
-| **Maximum capability** | mcp-video | 119 tools, everything built-in |
+| **Maximum capability** | mcp-video | 106 tools, everything built-in |
 | **Simple, focused editing** | ffmpeg-mcp (yubraaj11) | 12 composable tools, well-validated |
 | **Pipeline / multi-step** | VEMCP | Pipeline architecture, single-pass render |
 | **Zero-dependency** | mcp-video-editor | 9MB Go binary, nothing to install |
@@ -104,7 +104,7 @@ Comprehensive comparison of every known free/open-source MCP server for video ed
 
 ## Key Insight
 
-**mcp-video** leads on raw tool count and breadth (119 tools, Apache 2.0, 690+ tests, security-audited). But for most workflows, you don't need 119 tools — a focused server like VEMCP (pipeline) or yubraaj11's ffmpeg-mcp (composable blocks) gives you what you need with less context overhead. And for maximum flexibility, mrdainami's 2-tool approach lets the agent write any FFmpeg command itself.
+**mcp-video** leads on raw tool count and breadth (106 tools, Apache 2.0, 690+ tests, security-audited). But for most workflows, you don't need 119 tools — a focused server like VEMCP (pipeline) or yubraaj11's ffmpeg-mcp (composable blocks) gives you what you need with less context overhead. And for maximum flexibility, mrdainami's 2-tool approach lets the agent write any FFmpeg command itself.
 
 The NLE servers (mcp-kdenlive, kdenlive-mcp) are a separate category — they control a desktop app rather than wrapping FFmpeg. Use them for multi-track timeline work that's impractical with raw FFmpeg.
 

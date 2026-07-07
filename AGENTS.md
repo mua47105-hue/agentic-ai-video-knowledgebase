@@ -23,3 +23,9 @@ Key files:
 - `kb/tools/mlt_export.py` — NLE interchange via MLT XML
 - `kb/tools/content_adapter.py` — Pexels/Freesound stock content
 - `kb/tools/vlm_adapter.py` — Visual LLM for frame analysis (gated)
+- `kb/tools/classifier.py` — content-type classifier
+- `kb/tools/auto_recover.py` — bounded auto-retry engine
+- `kb/tools/decision_log.py` — decision audit logger
+- `kb/tools/music_adapter.py` — music analysis, search, download
+- `kb/tools/reframe_adapter.py` — smart video reframing
+- `kb/tools/unified_adapter.py` — single import surface (151 symbols)

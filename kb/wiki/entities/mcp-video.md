@@ -1,8 +1,11 @@
 ---
 title: mcp-video
 type: entity
+tags: [tool, mcp-server, ffmpeg, video-editing]
 created: 2026-07-06
-updated: 2026-07-06
+updated: 2026-07-08
+sources: [mcp-video-docs]
+related: [unified-adapter, hyperframes, color-space-management]
 ---
 
 # mcp-video
