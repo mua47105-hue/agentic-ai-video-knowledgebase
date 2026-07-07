@@ -12,7 +12,7 @@ related: [ai-video-models-2026]
 
 This chart compares the major AI video generation models across three dimensions: quality (Elo score from Artificial Analysis leaderboard), generation speed, and entry price.
 
-![Model Quality vs Speed vs Cost](../charts/ai-video-models-2026.png)
+![Model Quality vs Speed vs Cost](../charts/ai-video-models-2026.webp)
 
 ## Interpretation
 

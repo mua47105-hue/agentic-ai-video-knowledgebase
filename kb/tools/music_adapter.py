@@ -766,27 +766,9 @@ def music_download(
     except Exception:
         duration = track.get("duration", 0)
 
-    # Write license sidecar
-    attr_text = ""
-    if track.get("attribution_required"):
-        attr_text = (
-            f"Track: {track.get('title', '')} by {track.get('artist', '')}. "
-            f"License: {track.get('license', '')}. {download_url}"
-        )
-    license_data = {
-        "title": track.get("title", ""),
-        "artist": track.get("artist", ""),
-        "source": track.get("source", ""),
-        "download_url": download_url,
-        "license": track.get("license", ""),
-        "attribution_required": track.get("attribution_required", False),
-        "commercial_use": track.get("commercial_use", True),
-        "attribution_text": attr_text,
-        "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "size_bytes": size,
-    }
-    with open(lic_path, "w") as f:
-        json.dump(license_data, f, indent=2)
+    license_data = write_license_sidecar(
+        track, lic_path, download_url, size, prefix="Track",
+    )
 
     return {
         "path": str(out_path.resolve()),
@@ -797,7 +779,7 @@ def music_download(
         "license": track.get("license", ""),
         "attribution_required": track.get("attribution_required", False),
         "commercial_use": track.get("commercial_use", True),
-        "attribution_text": attr_text,
+        "attribution_text": license_data.get("attribution_text", ""),
         "size_bytes": size,
         "duration": duration,
         "cached": False,
@@ -960,6 +942,39 @@ def _filter_results(
             continue
         filtered.append(r)
     return filtered
+
+
+def write_license_sidecar(
+    track: dict, lic_path: pathlib.Path, download_url: str, size_bytes: int,
+    *,
+    prefix: str = "Track",
+) -> dict:
+    """Write .license.json sidecar for any downloaded asset.
+
+    Shared across music_adapter, content_adapter, and any other downloader.
+    Returns the license dict for inspection.
+    """
+    attr_text = ""
+    if track.get("attribution_required"):
+        attr_text = (
+            f"{prefix}: {track.get('title', '')} by {track.get('artist', '')}. "
+            f"License: {track.get('license', '')}. {download_url}"
+        )
+    license_data = {
+        "title": track.get("title", ""),
+        "artist": track.get("artist", ""),
+        "source": track.get("source", ""),
+        "download_url": download_url,
+        "license": track.get("license", ""),
+        "attribution_required": track.get("attribution_required", False),
+        "commercial_use": track.get("commercial_use", True),
+        "attribution_text": attr_text,
+        "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "size_bytes": size_bytes,
+    }
+    with open(lic_path, "w") as f:
+        json.dump(license_data, f, indent=2)
+    return license_data
 
 
 # ── module alias (mirrors ffmpeg_adapter.py pattern) ──

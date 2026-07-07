@@ -200,6 +200,7 @@ class _MusicModule(_types.ModuleType):
         return _music_adapter.music_download(track, **kwargs)
 
 music = _MusicModule("music_adapter")
+write_license_sidecar = _music_adapter.write_license_sidecar
 
 # ═══════════════════════════════════════════════════════════
 # Compliance reporter
@@ -345,7 +346,7 @@ __all__ = [
     # Deprecated aliases
     "scene_detect", "pip",
     # Music (adapter)
-    "music",
+    "music", "write_license_sidecar",
     # Content adapter
     "footage", "sfx", "lut_list", "lut_apply",
     # Compliance reporter

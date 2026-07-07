@@ -22,6 +22,7 @@ import typing as t
 from hashlib import sha256
 
 import requests
+from kb.tools.music_adapter import write_license_sidecar
 
 UA = "Mozilla/5.0 (agentic-ai-video-kb/1.0)"
 _CACHE_DIR = pathlib.Path(__file__).resolve().parent.parent.parent / "kb" / "raw" / "assets" / ".search_cache"
@@ -153,7 +154,8 @@ def footage_download(
     lic_path = out_dir / f"{pathlib.Path(filename).stem}.license.json"
 
     if out_path.exists():
-        return _build_download_result(track, out_path, lic_path, cached=True)
+        return _asset_result(track, out_path, lic_path, cached=True,
+                             extra={"width": track.get("width", 0), "height": track.get("height", 0)})
 
     r = requests.get(download_url, headers={"User-Agent": UA}, timeout=120, stream=True)
     r.raise_for_status()
@@ -161,30 +163,9 @@ def footage_download(
         for chunk in r.iter_content(chunk_size=8192):
             f.write(chunk)
 
-    _write_license_sidecar(track, lic_path, download_url, out_path.stat().st_size)
-    return _build_download_result(track, out_path, lic_path)
-
-
-def _build_download_result(
-    track: dict, out_path: pathlib.Path, lic_path: pathlib.Path, *, cached: bool = False,
-) -> dict:
-    result = {
-        "path": str(out_path.resolve()),
-        "license_path": str(lic_path.resolve()),
-        "title": track.get("title", ""),
-        "source": track.get("source", ""),
-        "license": track.get("license", ""),
-        "attribution_required": track.get("attribution_required", False),
-        "commercial_use": track.get("commercial_use", True),
-        "size_bytes": out_path.stat().st_size,
-        "duration": track.get("duration", 0),
-        "width": track.get("width", 0),
-        "height": track.get("height", 0),
-        "cached": cached,
-    }
-    if track.get("attribution_required"):
-        result["attribution_text"] = f"Video: {track.get('title', '')}. License: {track.get('license', '')}. {track.get('url', '')}"
-    return result
+    write_license_sidecar(track, lic_path, download_url, out_path.stat().st_size, prefix="Video")
+    return _asset_result(track, out_path, lic_path,
+                         extra={"width": track.get("width", 0), "height": track.get("height", 0)})
 
 
 # ═══════════════════════════════════════════════════════════
@@ -299,7 +280,7 @@ def sfx_download(
     lic_path = out_dir / f"{pathlib.Path(filename).stem}.license.json"
 
     if out_path.exists():
-        return _build_sfx_result(track, out_path, lic_path, cached=True)
+        return _asset_result(track, out_path, lic_path, cached=True)
 
     headers = _freesound_headers()
     r = requests.get(download_url, headers=headers, timeout=120, stream=True)
@@ -308,33 +289,8 @@ def sfx_download(
         for chunk in r.iter_content(chunk_size=8192):
             f.write(chunk)
 
-    _write_license_sidecar(track, lic_path, download_url, out_path.stat().st_size)
-    return _build_sfx_result(track, out_path, lic_path)
-
-
-def _build_sfx_result(
-    track: dict, out_path: pathlib.Path, lic_path: pathlib.Path, *, cached: bool = False,
-) -> dict:
-    attr_text = ""
-    if track.get("attribution_required"):
-        attr_text = (
-            f'SFX: {track.get("title", "")} by {track.get("artist", "")}. '
-            f'License: {track.get("license", "")}.'
-        )
-    return {
-        "path": str(out_path.resolve()),
-        "license_path": str(lic_path.resolve()),
-        "title": track.get("title", ""),
-        "artist": track.get("artist", ""),
-        "source": track.get("source", ""),
-        "license": track.get("license", ""),
-        "attribution_required": track.get("attribution_required", False),
-        "commercial_use": track.get("commercial_use", True),
-        "attribution_text": attr_text,
-        "size_bytes": out_path.stat().st_size,
-        "duration": track.get("duration", 0),
-        "cached": cached,
-    }
+    write_license_sidecar(track, lic_path, download_url, out_path.stat().st_size, prefix="SFX")
+    return _asset_result(track, out_path, lic_path)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -394,34 +350,39 @@ def lut_apply(video: str, lut_name: str, output: str, *, intensity: float = 1.0)
 # ═══════════════════════════════════════════════════════════
 
 
-def _cache_results(cache_path: pathlib.Path, results: list) -> None:
-    with open(cache_path, "w") as f:
-        json.dump(results, f, indent=2)
-
-
-def _write_license_sidecar(
-    track: dict, lic_path: pathlib.Path, download_url: str, size_bytes: int,
-) -> None:
+def _asset_result(
+    track: dict, out_path: pathlib.Path, lic_path: pathlib.Path,
+    *, cached: bool = False, extra: dict | None = None,
+) -> dict:
+    """Shared result builder for footage and SFX downloads."""
     attr_text = ""
     if track.get("attribution_required"):
         attr_text = (
             f'{track.get("title", "")} by {track.get("artist", "")}. '
             f'License: {track.get("license", "")}.'
         )
-    license_data = {
+    result = {
+        "path": str(out_path.resolve()),
+        "license_path": str(lic_path.resolve()),
         "title": track.get("title", ""),
         "artist": track.get("artist", ""),
         "source": track.get("source", ""),
-        "download_url": download_url,
         "license": track.get("license", ""),
         "attribution_required": track.get("attribution_required", False),
         "commercial_use": track.get("commercial_use", True),
         "attribution_text": attr_text,
-        "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "size_bytes": size_bytes,
+        "size_bytes": out_path.stat().st_size,
+        "duration": track.get("duration", 0),
+        "cached": cached,
     }
-    with open(lic_path, "w") as f:
-        json.dump(license_data, f, indent=2)
+    if extra:
+        result.update(extra)
+    return result
+
+
+def _cache_results(cache_path: pathlib.Path, results: list) -> None:
+    with open(cache_path, "w") as f:
+        json.dump(results, f, indent=2)
 
 
 class _FootageModule:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate AI video models comparison chart."""
 
+import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -47,5 +48,12 @@ plt.tight_layout()
 import pathlib
 out = pathlib.Path(__file__).resolve().parent.parent / "wiki" / "charts"
 out.mkdir(parents=True, exist_ok=True)
-plt.savefig(str(out / "ai-video-models-2026.png"), dpi=150)
-print(f"Chart saved to {out / 'ai-video-models-2026.png'}")
+png_path = str(out / "ai-video-models-2026.png")
+webp_path = str(out / "ai-video-models-2026.webp")
+plt.savefig(png_path, dpi=150)
+# Convert to lossless WebP (~68% smaller, mathematically lossless)
+from PIL import Image
+img = Image.open(png_path)
+img.save(webp_path, format="WEBP", lossless=True)
+print(f"Chart saved to {png_path}  ({os.path.getsize(png_path)/1024:.0f}K)")
+print(f"Lossless WebP: {webp_path}  ({os.path.getsize(webp_path)/1024:.0f}K, {(1-os.path.getsize(webp_path)/os.path.getsize(png_path))*100:.0f}% smaller)")
