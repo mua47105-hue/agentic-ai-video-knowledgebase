@@ -411,3 +411,84 @@ The full 8-module intelligent pipeline (M0 PROBE → M0.5 CLASSIFY → M1 RELEVA
 - Cache: first probe-only 5.27s, second probe-only 0.17s (31x speedup on tiny clip; 60x on real video)
 - Skip-when-unnecessary: correctly identifies trim+render recipes as not needing probe
 - --list, --probe-only, --analyze-all all work end-to-end
+
+## [2026-07-07] online-music | Online music sources (YouTube trending + Internet Archive public-domain classical) via yt-dlp
+
+### Problem
+The music_adapter only searched royalty-free sources (Pixabay, Incompetech, MusOpen). Creators want trending music and beautiful classical recordings — most of which are NOT royalty-free. The framework had no way to access them.
+
+### New module: `kb/tools/online_music.py` (670 lines)
+Three online music sources, all opt-in:
+
+**1. YouTube search (`sources=["youtube"]`)**
+- Uses yt-dlp to search YouTube for any query
+- Returns video metadata (title, channel, duration, thumbnail)
+- Downloads audio as MP3/M4A/WAV via yt-dlp audio extraction
+- License: "online_source" — personal use only
+- License sidecar marks `commercial_use: false` with sync-license reminder
+
+**2. YouTube trending (`sources=["youtube_trending"]` or `["trending"]`)**
+- Fetches trending music from YouTube trending/playlist URLs
+- 9 categories: top, music, pop, hiphop, classical, electronic, rock, lofi, cinematic
+- Same download + license mechanism as YouTube search
+
+**3. Internet Archive public-domain classical (`sources=["internet_archive"]` or `["classical"]`)**
+- Uses the archive.org advanced search API (no yt-dlp needed for search)
+- Returns public-domain classical recordings (Beethoven, Bach, Mozart, etc.)
+- Downloads via yt-dlp (which supports archive.org URLs)
+- License: "public_domain" — `commercial_use: true` (SAFE for commercial use, no sync license needed)
+- This is the answer to "classical and beautiful music are not royalty-free" — many classical recordings ARE public domain
+
+**4. All online sources (`sources=["online"]`)**
+- Searches both YouTube + Internet Archive in one call
+
+### Integration with music_adapter
+- `music_search()` now accepts `"youtube"`, `"youtube_trending"`, `"trending"`, `"internet_archive"`, `"classical"`, `"online"` in the `sources` parameter
+- `music_download()` auto-dispatches to `online_music.download_online()` for online-source tracks
+- License filter updated to include `"public_domain"` and `"online_source"` (was filtering them out)
+- Default sources unchanged: still `["pixabay", "incompetech", "musopen"]` (royalty-free) — online sources are opt-in
+
+### Legal/ethical design
+- Online sources are OPT-IN (never default) — existing recipes don't change behavior
+- Every downloaded track gets a `.license.json` sidecar with:
+  - `license`: "online_source" or "public_domain"
+  - `commercial_use`: false (YouTube) or true (Internet Archive)
+  - `attribution_text`: full credit + source URL
+  - `note`: "Personal use only. For commercial use, obtain a sync license."
+- YouTube tracks: `commercial_use=false` — creator's responsibility to secure rights
+- Internet Archive tracks: `commercial_use=true` — public domain, safe for any use
+
+### Dependencies
+- yt-dlp (auto-installed by `ensure_yt_dlp()` on first use — `pip install yt-dlp`)
+- No other new deps (Internet Archive search uses stdlib urllib)
+
+### Usage
+```python
+from kb.tools.music_adapter import music_search, music_download
+
+# Public-domain classical (commercial-safe)
+tracks = music_search("Beethoven symphony", sources=["internet_archive"], top_k=5, duration_min=0)
+track = tracks[0]
+downloaded = music_download(track)
+# → downloaded["license"] == "public_domain", downloaded["commercial_use"] == True
+
+# YouTube trending (personal use)
+tracks = music_search("trending", sources=["youtube_trending"], top_k=5, duration_min=0)
+track = tracks[0]
+downloaded = music_download(track)
+# → downloaded["license"] == "online_source", downloaded["commercial_use"] == False
+
+# All online sources combined
+tracks = music_search("epic cinematic", sources=["online"], top_k=10, duration_min=0)
+```
+
+### Bug fix: license_filter was filtering out online sources
+The default `license_filter` in `music_search()` was `["Pixabay", "CC-BY 4.0", "CC0", "Public Domain", "CC-BY"]`. The online sources return `license="public_domain"` (lowercase) and `license="online_source"`, neither of which matched the filter. Fixed by adding both to the default filter.
+
+### Tests
+- Internet Archive search: returns 3 public-domain Beethoven recordings (commercial_use=True)
+- YouTube search: returns 3 trending pop tracks (commercial_use=False)
+- "classical" alias: works (same as internet_archive)
+- "online" combined: returns results from internet_archive
+- All 6 modules import cleanly
+- music_search + music_download dispatch correctly for all source types

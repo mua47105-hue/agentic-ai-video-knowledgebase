@@ -647,7 +647,9 @@ def music_search(
     if sources is None:
         sources = ["pixabay", "incompetech", "musopen"]
     if license_filter is None:
-        license_filter = ["Pixabay", "CC-BY 4.0", "CC0", "Public Domain", "CC-BY"]
+        # Include online source license types so YouTube/IA results aren't filtered out
+        license_filter = ["Pixabay", "CC-BY 4.0", "CC0", "Public Domain", "CC-BY",
+                          "public_domain", "online_source"]
 
     _CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -672,6 +674,13 @@ def music_search(
                 results = _search_incompetech(query, top_k, timeout_per_source)
             elif src == "musopen":
                 results = _search_musopen(query, top_k, timeout_per_source)
+            elif src in ("youtube", "youtube_trending", "trending", "online",
+                         "internet_archive", "classical"):
+                # Online music source (yt-dlp + Internet Archive API) — opt-in
+                # YouTube/trending: personal use only (copyrighted)
+                # internet_archive/classical: public domain (commercial-safe)
+                from kb.tools.online_music import search_online
+                results = search_online(query, sources=[src], top_k=top_k, timeout=timeout_per_source)
             else:
                 continue
             all_results.extend(results)
@@ -714,6 +723,14 @@ def music_download(
     """
     Download a track from the internet.  Writes audio file + .license.json sidecar.
     """
+    # Dispatch to online_music for YouTube/online/IA sources
+    source = track.get("source", "")
+    if source in ("youtube", "youtube_trending", "trending", "online",
+                  "internet_archive", "classical"):
+        from kb.tools.online_music import download_online
+        return download_online(track, output_dir=output_dir, filename=filename,
+                                prefer_format=prefer_format, skip_if_exists=skip_if_exists)
+
     out_dir = pathlib.Path(output_dir) if output_dir else _MUSIC_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
