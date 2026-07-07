@@ -67,6 +67,7 @@ updated: 2026-07-08
 - [Color-Space Management](concepts/color-space-management) — working in known color spaces before grading
 - [Multi-Cam Editing](concepts/multi-cam-editing) — synchronizing and switching between multiple camera angles
 - [Chroma Key / Green Screen](concepts/chroma-key) — replacing solid-color backgrounds with composited video
+- [Multimodal Intelligence Architecture](concepts/multimodal-intelligence-architecture) — Phase 6-9 intelligence layer: multimodal probe, relevance map, cut detection, pacing, slow-mo, music sync, plan critic, hero detector, edit-pattern memory, 7-dimension reviewer
 
 ## Comparisons
 

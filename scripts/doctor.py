@@ -97,6 +97,16 @@ def run_all() -> list[Check]:
     checks.append(check_python_module("mcp_video", "mcp-video"))
     checks.append(check_python_module("faster_whisper", "faster-whisper"))
 
+    # Phase 6-9 probe + intelligence layer (all optional)
+    for mod, pip in [
+        ("av", "av"), ("pyscenedetect", "pyscenedetect"),
+        ("silero_vad", "silero-vad"), ("demucs", "demucs"),
+        ("speechbrain", "speechbrain"), ("easyocr", "easyocr"),
+        ("litellm", "litellm"), ("mediapipe", "mediapipe"),
+        ("clip", "open-clip-torch"), ("pyannote.audio", "pyannote.audio"),
+    ]:
+        checks.append(check_python_module(mod, pip))
+
     # KB modules
     for rel in [
         "kb.tools.recipe_runner", "kb.tools.unified_adapter", "kb.tools._mcp_bridge",
@@ -104,6 +114,13 @@ def run_all() -> list[Check]:
         "kb.tools.compliance", "kb.tools.mlt_export", "kb.tools.search",
         "kb.tools.chart_models", "kb.tools.reframe_adapter", "kb.tools.vlm_adapter",
         "kb.tools.caption_presets",
+        # Phase 6-9 intelligence modules
+        "kb.tools.probe", "kb.tools.probe_visual", "kb.tools.probe_audio",
+        "kb.tools.probe_semantic", "kb.tools.timeline_view",
+        "kb.tools.relevance_map", "kb.tools.cut_detector",
+        "kb.tools.pacing_engine", "kb.tools.slowmo_engine", "kb.tools.music_sync",
+        "kb.tools.plan_critic", "kb.tools.intelligent_planner",
+        "kb.tools.hero_detector", "kb.tools.edit_memory", "kb.tools.reviewer",
     ]:
         checks.append(check_kb_module(rel))
 

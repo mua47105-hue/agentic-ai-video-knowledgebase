@@ -232,3 +232,47 @@ Created `scripts/lint_wiki.py` — checks for orphan pages, broken internal link
 
 ### Current tally
 25 entities (16 active + 9 archived), 7 concepts, 5 guides, 3 comparisons, 1 chart, 6 recipe packs, 5 source pages, root SKILL.md, `scripts/lint_wiki.py`. Extended tools: MLT export, compliance reporter, content adapter, VLM adapter (gated), decision_log, classifier, auto_recover.
+
+## [2026-07-07] phase-6-9 | Multimodal intelligence layer (probe, relevance map, cut detection, pacing, slow-mo, music sync, plan critic, hero detector, memory, reviewer)
+
+Implemented Phases 6-9 of the intelligence plan — the framework now **sees, knows, critiques, learns, and explains**.
+
+### Phase 6 — Multimodal Probe Layer (`kb/tools/probe*.py`)
+- `probe.py` — unified `probe_video()` runs visual + audio + semantic probes in parallel, merges into `SourceProfile` aligned on a 1-second grid
+- `probe_visual.py` — ffprobe + PySceneDetect + MediaPipe face/pose + HSEmotion + OpenCV motion energy + LAION aesthetic + shot-scale + EasyOCR
+- `probe_audio.py` — librosa beats/onsets + Silero VAD + pyannote diarization + Demucs stems + SpeechBrain prosody + ebur128 loudness
+- `probe_semantic.py` — CrisperWhisper transcription + ~12KB transcript packing (video-use pattern) + LLM/heuristic semantic scoring + keyphrase extraction
+- `timeline_view.py` — filmstrip + waveform + peak-marker PNG (decision-support artifact)
+- Every heavy model is OPTIONAL — the probe degrades gracefully to ffprobe + PySceneDetect + librosa when mediapipe/demucs/etc. are absent
+
+### Phase 7 — Edit Relevance Map + Cut Detection
+- `relevance_map.py` — per-second 6-dimensional scoring (semantic, emotional, visual, audio, pacing, hero_score via geometric-mean cross-modal fusion) + hero moment + dead zone detection
+- `cut_detector.py` — Walter Murch's Rule of Six as executable weighted composite (emotion 0.51, story 0.23, rhythm 0.10, eye_trace 0.07, plane_2d 0.05, space_3d 0.04); respects 4 boundary types (shot, silence, sentence-end, beat)
+
+### Phase 8 — Pacing, Slow-Mo & Music Engine
+- `pacing_engine.py` — 10 content-type pacing profiles (vlog 5-10s interrupts, TikTok 3-5s, podcast 30-90s, etc.) with hook-window enforcement
+- `slowmo_engine.py` — detects impact/reveal/beauty moments; proposes speed ramps (0.30×/0.45×/0.50×) with SFX pairing (sub-bass/riser-reverse/ambient-swell) + beat-snapping to musical bars
+- `music_sync.py` — librosa SSF music structure detection + cut alignment (hero→section, others→downbeat, Δt≤0.1s) + Geary JAES 2020 ducking (14 LU, 150ms attack, 300ms release, 6:1 ratio)
+
+### Phase 9 — Plan Critic, Hero Detector, Memory, Reviewer (★ 3 NOVEL contributions ★)
+- `plan_critic.py` ★ NOVEL (RESEARCH-3 gap #1) ★ — red-teams EditPlan BEFORE execution: 11 Hard Rules statically checked + SourceProfile mismatch + hero preservation + plan-graph quality (acyclicity, connectivity, intent coverage) + optional LLM critique. Catches 80% of failures before any FFmpeg call
+- `hero_detector.py` ★ NOVEL (RESEARCH-3 gap #3) ★ — cross-modal geometric-mean fusion of audio peak × visual peak × semantic salience co-occurrence within 0.5s windows (level 3 = triple, level 2 = double, level 1 = single)
+- `edit_memory.py` ★ NOVEL (RESEARCH-3 gap #5) ★ — SQLite edit-pattern DB: key = hash(content_type, technique, params) → {success_rate, avg_vmaf, sample_count}. Planner queries this to bias plans toward historically successful techniques
+- `intelligent_planner.py` — LLM-based plan generation (via LiteLLM/Ollama) with critique-and-revise (max 3 rounds); falls back to rule-based plan from Phase 6-8 outputs when LLM unavailable
+- `reviewer.py` — 7-dimension scoring (AVE's 5 + Audio + Narrative Coherence) with VMAF auto-correction (re-encode at lower CRF if VMAF < 80)
+
+### Integration
+- `recipe_runner.py` wired with all 11 new modules; manifest now includes `source_profile_metadata`, `relevance_map_summary`, `hero_moments`, `cut_points`, `paced_plan_summary`, `slowmo_proposals`, `music_sync_plan`, `edit_plan`, `memory_hints`, `review_result`, `memory_writes`
+- New CLI flags: `--probe-only` (save SourceProfile JSON), `--analyze-only` (full intelligence pipeline analysis without recipe execution), `--no-intelligent-planning` (skip LLM)
+- `requirements.txt` + `pyproject.toml` updated with `[probe]` and `[probe-heavy]` extras (all optional)
+- `scripts/doctor.py` checks all 13 new modules + 10 new optional deps
+- `scripts/test_phase6_9_intelligence.py` — 93 tests, all passing
+
+### License discipline
+Disqualified models: madmom (CC-BY-NC-SA), opensmile (GPLv3), aubio (GPL-3.0), YOLOv8 (AGPL-3.0), OpenPose (non-commercial). Used instead: librosa (ISC), MediaPipe (Apache), HSEmotion (Apache), Silero VAD (MIT), pyannote (MIT, HF-gated), Demucs (MIT), SpeechBrain (Apache), EasyOCR (Apache), LAION-CLIP (MIT), LiteLLM (MIT).
+
+### VRAM discipline
+No model requires >6GB VRAM. Qwen2.5-VL (the largest, ~18GB) remains gated behind `VLM_ENABLED=1` and is NEVER called by the probe layer. The full intelligence pipeline runs on CPU with just ffmpeg + librosa + opencv + numpy. Heavy models (mediapipe, demucs, pyannote, speechbrain, easyocr, LAION-CLIP) are opt-in and auto-detected at runtime.
+
+### Current tally
+25 entities (16 active + 9 archived), 7 concepts, 5 guides, 3 comparisons, 1 chart, 7 recipe packs, 5 source pages, root SKILL.md. Extended tools: 30 modules total (16 from Phases 1-4 + 14 new from Phases 6-9).

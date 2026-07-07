@@ -49,6 +49,57 @@ try:
 except ImportError:
     DecisionLogger = None  # type: ignore
 
+# Phase 6-9 intelligence layer (all optional — graceful degradation)
+try:
+    from kb.tools.probe import probe_video as _probe_video
+except ImportError:
+    _probe_video = None  # type: ignore
+
+try:
+    from kb.tools.relevance_map import build_relevance_map as _build_relevance_map
+except ImportError:
+    _build_relevance_map = None  # type: ignore
+
+try:
+    from kb.tools.cut_detector import find_best_cuts as _find_best_cuts
+except ImportError:
+    _find_best_cuts = None  # type: ignore
+
+try:
+    from kb.tools.pacing_engine import build_paced_plan as _build_paced_plan
+except ImportError:
+    _build_paced_plan = None  # type: ignore
+
+try:
+    from kb.tools.slowmo_engine import find_slowmo_moments as _find_slowmo_moments
+except ImportError:
+    _find_slowmo_moments = None  # type: ignore
+
+try:
+    from kb.tools.music_sync import build_music_sync_plan as _build_music_sync_plan
+except ImportError:
+    _build_music_sync_plan = None  # type: ignore
+
+try:
+    from kb.tools.hero_detector import detect_hero_moments as _detect_hero_moments
+except ImportError:
+    _detect_hero_moments = None  # type: ignore
+
+try:
+    from kb.tools.intelligent_planner import generate_plan as _generate_plan
+except ImportError:
+    _generate_plan = None  # type: ignore
+
+try:
+    from kb.tools.reviewer import review_output as _review_output
+except ImportError:
+    _review_output = None  # type: ignore
+
+try:
+    from kb.tools.edit_memory import EditPatternDB as _EditPatternDB
+except ImportError:
+    _EditPatternDB = None  # type: ignore
+
 
 class RecipeSubstitutionError(Exception):
     """Raised when a $variable substitution in a recipe cannot be resolved cleanly."""
@@ -811,6 +862,111 @@ def run_recipe(
         except Exception as e:
             print(f"Note: Classifier unavailable: {e}", file=sys.stderr)
 
+    # ── Phase 6-9 intelligence layer (optional — degrades gracefully) ──
+    content_type = recipe.get("content_type", "vlog")
+    if _probe_video is not None:
+        try:
+            source_profile = _probe_video(
+                input_path,
+                separate_stems=recipe.get("separate_stems", False),
+                score_with_llm=False,
+                render_timeline_png=True,
+            )
+            context["_source_profile"] = source_profile
+            if logger is not None:
+                logger.log(
+                    type="probe",
+                    action=f"multimodal probe: {len(source_profile.get('per_second', []))}s",
+                    input=input_path,
+                    output=source_profile.get("metadata", {}),
+                    reasoning="Phase 6 multimodal probe (visual+audio+semantic)",
+                )
+        except Exception as e:
+            print(f"Note: Multimodal probe unavailable: {e}", file=sys.stderr)
+            context["_source_profile_error"] = str(e)
+
+        sp = context.get("_source_profile")
+        if sp and _build_relevance_map is not None:
+            try:
+                rm = _build_relevance_map(sp, content_type=content_type)
+                context["_relevance_map"] = rm.as_dict() if hasattr(rm, "as_dict") else rm
+                if logger is not None:
+                    logger.log(type="relevance_map",
+                               action=f"hero_moments={len(rm.hero_moments)} dead_zones={len(rm.dead_zones)}",
+                               output=rm.summary, reasoning="Phase 7 edit relevance map")
+            except Exception as e:
+                print(f"Note: Relevance map unavailable: {e}", file=sys.stderr)
+
+        if sp and _find_best_cuts is not None and context.get("_relevance_map"):
+            try:
+                cuts = _find_best_cuts(sp, context["_relevance_map"], content_type, n=20)
+                context["_cut_points"] = cuts
+            except Exception as e:
+                print(f"Note: Cut detection unavailable: {e}", file=sys.stderr)
+
+        if sp and context.get("_relevance_map") and _build_paced_plan is not None:
+            try:
+                paced = _build_paced_plan(sp, context["_relevance_map"],
+                                          context.get("_cut_points", []), content_type)
+                context["_paced_plan"] = paced
+            except Exception as e:
+                print(f"Note: Pacing engine unavailable: {e}", file=sys.stderr)
+
+        if sp and context.get("_relevance_map") and _find_slowmo_moments is not None:
+            try:
+                slowmo = _find_slowmo_moments(sp, context["_relevance_map"],
+                                              max_per_minute=recipe.get("max_slowmo_per_minute", 2))
+                context["_slowmo_proposals"] = slowmo
+            except Exception as e:
+                print(f"Note: Slow-mo engine unavailable: {e}", file=sys.stderr)
+
+        if sp and context.get("_cut_points") and _build_music_sync_plan is not None:
+            try:
+                music_plan = _build_music_sync_plan(sp, context["_cut_points"], context["_relevance_map"])
+                context["_music_sync_plan"] = music_plan
+            except Exception as e:
+                print(f"Note: Music sync unavailable: {e}", file=sys.stderr)
+
+        if sp and context.get("_relevance_map") and _detect_hero_moments is not None:
+            try:
+                heroes = _detect_hero_moments(sp, context["_relevance_map"])
+                context["_hero_moments"] = heroes
+                if logger is not None and heroes:
+                    for h in heroes[:5]:
+                        logger.log(type="hero_detect",
+                                   action=f"level {h['level']} ({h['label']}) @ {h['start']:.1f}s",
+                                   output=h["geometric_mean"],
+                                   reasoning=h["fusion_reasoning"][:200],
+                                   succeeded=h["level"] >= 2)
+            except Exception as e:
+                print(f"Note: Hero detector unavailable: {e}", file=sys.stderr)
+
+        if not recipe.get("skip_intelligent_planning", False) and _generate_plan is not None:
+            try:
+                memory_hints: list[dict] = []
+                if _EditPatternDB is not None:
+                    db = _EditPatternDB()
+                    memory_hints = db.get_memory_hints(content_type, top_n=5)
+                    context["_memory_hints"] = memory_hints
+                edit_plan = _generate_plan(
+                    sp, context.get("_relevance_map", {}), context.get("_cut_points", []),
+                    context.get("_paced_plan", {}), context.get("_slowmo_proposals", []),
+                    context.get("_music_sync_plan", {}), content_type,
+                    recipe.get("intents", []), memory_hints,
+                    plan_llm_model=recipe.get("plan_llm", "ollama/qwen2.5-coder:7b"),
+                    max_critique_rounds=3,
+                )
+                context["_edit_plan"] = edit_plan
+                if logger is not None:
+                    critic = edit_plan.get("plan_critic_result", {}) or {}
+                    logger.log(type="plan_critic",
+                               action=f"approved={critic.get('approved')} rounds={critic.get('rounds')}",
+                               output=critic.get("approved"),
+                               reasoning=critic.get("reasoning", ""),
+                               succeeded=critic.get("approved", False))
+            except Exception as e:
+                print(f"Note: Intelligent planner unavailable: {e}", file=sys.stderr)
+
     # ── Step execution ──
     for i, step in enumerate(recipe.get("steps", [])):
         context["_step_idx"] = i
@@ -954,6 +1110,48 @@ def run_recipe(
                 print(f"  - {m.get('category')} @ {m.get('start'):.1f}s: {fv['reasoning']}", file=sys.stderr)
             print("  Consider manual review or re-running with different categories.\n", file=sys.stderr)
 
+    # ── Phase 9 M4: 7-dimension reviewer (on the final output) ──
+    review_result: t.Optional[dict] = None
+    if _review_output is not None and final_output and os.path.exists(final_output):
+        try:
+            sp = context.get("_source_profile", {})
+            review_result = _review_output(
+                final_output,
+                context.get("_edit_plan", {"assumptions": {}, "steps": []}),
+                sp,
+                context.get("_paced_plan", {"summary": {}}),
+                content_type,
+            )
+            if logger is not None:
+                logger.log(type="review",
+                           action=f"overall={review_result.get('overall')} passed={review_result.get('passed')}",
+                           output=review_result.get("overall"),
+                           reasoning=review_result.get("reasoning", ""),
+                           succeeded=review_result.get("passed", False))
+        except Exception as e:
+            print(f"Note: Reviewer unavailable: {e}", file=sys.stderr)
+
+    # ── Phase 9 M5: edit-pattern memory write ──
+    memory_writes: list[dict] = []
+    if _EditPatternDB is not None:
+        try:
+            db = _EditPatternDB()
+            run_id = context.get("_run_id", f"{recipe.get('name', 'unknown')}_{int(time.time())}")
+            review_overall = (review_result or {}).get("overall") if review_result else None
+            review_vmaf = (review_result or {}).get("vmaf") if review_result else None
+            review_passed = (review_result or {}).get("passed", False) if review_result else False
+            for step in recipe.get("steps", []):
+                tool = step.get("tool", "")
+                if tool.startswith("edit."):
+                    technique = tool[5:]
+                    params = step.get("params", {})
+                    db.record_outcome(content_type, technique, params,
+                                      success=review_passed, vmaf=review_vmaf,
+                                      reviewer_score=review_overall, run_id=run_id)
+                    memory_writes.append({"technique": technique, "success": review_passed})
+        except Exception as e:
+            print(f"Note: Memory write unavailable: {e}", file=sys.stderr)
+
     # ── Finalize manifest ──
     manifest = {
         "recipe": recipe.get("name", "unknown"),
@@ -965,6 +1163,20 @@ def run_recipe(
         "quality_gates": quality_results,
         "step_results": step_results,
         "classification": classification,
+        # Phase 6-9 intelligence layer
+        "source_profile_metadata": (context.get("_source_profile") or {}).get("metadata", {}),
+        "source_profile_components": (context.get("_source_profile") or {}).get("components_used", {}),
+        "relevance_map_summary": (context.get("_relevance_map") or {}).get("summary", {}),
+        "hero_moments": context.get("_hero_moments", []),
+        "cut_points": (context.get("_cut_points") or [])[:10],
+        "paced_plan_summary": (context.get("_paced_plan") or {}).get("summary", {}),
+        "slowmo_proposals": context.get("_slowmo_proposals", []),
+        "music_sync_plan": context.get("_music_sync_plan", {}),
+        "edit_plan": context.get("_edit_plan"),
+        "memory_hints": context.get("_memory_hints", []),
+        "review_result": review_result,
+        "memory_writes": memory_writes,
+        # Existing Phase 4 fields
         "vlm_verification": vlm_verification,
         "recovery_attempts": recovery_attempts,
         "decision_log": logger.as_list() if logger is not None else [],
@@ -973,7 +1185,7 @@ def run_recipe(
 
     manifest_path = out_path / "manifest.json"
     with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=2)
+        json.dump(manifest, f, indent=2, default=str)
 
     return manifest
 
@@ -988,6 +1200,12 @@ def cli() -> None:
     parser.add_argument("--force-content-type", help="Override recipe content_type before execution")
     parser.add_argument("--explain", action="store_true",
                         help="After running, print the decision log in human-readable form")
+    parser.add_argument("--probe-only", action="store_true",
+                        help="Run multimodal probe and save SourceProfile JSON, then exit")
+    parser.add_argument("--analyze-only", action="store_true",
+                        help="Run probe + relevance map + cut detection + pacing + slow-mo + music sync + hero detection, save JSON, exit")
+    parser.add_argument("--no-intelligent-planning", action="store_true",
+                        help="Skip LLM plan generation + critique; use recipe YAML directly")
     args = parser.parse_args()
 
     if args.list:
@@ -1030,8 +1248,71 @@ def cli() -> None:
         print(json.dumps(output, indent=2, default=str))
         sys.exit(0)
 
+    if args.probe_only:
+        input_file = args.input or args.recipe
+        if not input_file:
+            parser.error("--probe-only requires an input file")
+        if _probe_video is None:
+            print("ERROR: probe module not available (pip install -e .)", file=sys.stderr)
+            sys.exit(1)
+        from kb.tools.probe import save_profile
+        profile = _probe_video(input_file, separate_stems=False, score_with_llm=False)
+        out_dir = pathlib.Path(args.output or ".")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_json = out_dir / f"{pathlib.Path(input_file).stem}_profile.json"
+        save_profile(profile, str(out_json))
+        comps = profile.get("components_used", {})
+        print(f"SourceProfile saved to {out_json}")
+        print(f"  duration: {profile.get('metadata', {}).get('duration', 0):.1f}s")
+        print(f"  visual components: {comps.get('visual', [])}")
+        print(f"  audio components:  {comps.get('audio', [])}")
+        print(f"  semantic components: {comps.get('semantic', [])}")
+        sys.exit(0)
+
+    if args.analyze_only:
+        input_file = args.input or args.recipe
+        if not input_file:
+            parser.error("--analyze-only requires an input file")
+        if _probe_video is None:
+            print("ERROR: probe module not available (pip install -e .)", file=sys.stderr)
+            sys.exit(1)
+        content_type_an = "vlog"
+        recipe_path_an = args.recipe if (args.recipe and args.input) else None
+        if recipe_path_an and yaml is not None:
+            try:
+                with open(recipe_path_an) as f:
+                    r = yaml.safe_load(f) or {}
+                content_type_an = r.get("content_type", "vlog")
+            except Exception:
+                pass
+        profile = _probe_video(input_file, separate_stems=False, score_with_llm=False)
+        rm = _build_relevance_map(profile, content_type=content_type_an) if _build_relevance_map else None
+        rm_dict = rm.as_dict() if rm and hasattr(rm, "as_dict") else (rm or {})
+        cuts = _find_best_cuts(profile, rm_dict, content_type_an, n=20) if _find_best_cuts and rm else []
+        paced = _build_paced_plan(profile, rm_dict, cuts, content_type_an) if _build_paced_plan and rm else {}
+        slowmo = _find_slowmo_moments(profile, rm_dict, max_per_minute=2) if _find_slowmo_moments and rm else []
+        music = _build_music_sync_plan(profile, cuts, rm_dict) if _build_music_sync_plan and rm else {}
+        heroes = _detect_hero_moments(profile, rm_dict) if _detect_hero_moments and rm else []
+        analysis = {
+            "source_profile": profile, "relevance_map": rm_dict,
+            "cut_points": cuts, "paced_plan": paced,
+            "slowmo_proposals": slowmo, "music_sync_plan": music,
+            "hero_moments": heroes,
+        }
+        out_dir = pathlib.Path(args.output or ".")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_json = out_dir / f"{pathlib.Path(input_file).stem}_analysis.json"
+        with open(out_json, "w") as f:
+            json.dump(analysis, f, indent=2, default=str)
+        print(f"Analysis saved to {out_json}")
+        print(f"  hero moments: {len(heroes)}")
+        print(f"  dead zones:   {len(rm_dict.get('dead_zones', []))}")
+        print(f"  cut points:   {len(cuts)}")
+        print(f"  slow-mo props:{len(slowmo)}")
+        sys.exit(0)
+
     if not args.recipe or not args.input:
-        parser.error("recipe and input are required unless --list or --recommend is used")
+        parser.error("recipe and input are required unless --list or --recommend or --probe-only or --analyze-only is used")
 
     manifest = run_recipe(args.recipe, args.input, output_dir=args.output, force_content_type=args.force_content_type)
     print(json.dumps(manifest, indent=2, default=str))

@@ -80,6 +80,8 @@ OUTPUT_LUFS: -16 (talking-head) | -14 (streaming) | -23 (broadcast)
 
 ### Phase 1: PROBE — Understand the Source
 
+> **As of Phase 6, the multimodal probe is executable.** `from kb.tools.probe import probe_video` runs all probes in parallel: ffprobe metadata, CrisperWhisper transcript, PySceneDetect, MediaPipe face/pose, HSEmotion, OpenCV motion energy, LAION aesthetic, Silero VAD, pyannote diarization, Demucs stem separation, SpeechBrain prosody emotion. Output: `SourceProfile` (JSON) + `packed_transcript.md` (~12KB) + `timeline.png`. The recipe runner calls this automatically (`--probe-only` to run standalone). Every heavy-model dep is optional — the probe degrades gracefully to ffprobe + PySceneDetect + librosa when mediapipe/demucs/etc. are absent.
+
 ```bash
 # Complete media probe (one command)
 ffprobe -v quiet -print_format json -show_format -show_streams input.mp4
@@ -98,6 +100,10 @@ whisper input.mp4 --output-srt --model base
 ```
 
 Probe yields a **Source Profile**: `{duration, resolution, codecs, fps, scene_count, transcript_available, has_audio, estimated_quality}`. Store this — it drives all planning.
+
+### Phase 1.5: RELEVANCE MAP + CUT DETECTION (Phase 7)
+
+> **As of Phase 7, the framework knows where the good parts are.** `kb/tools/relevance_map.py` scores every 1-second window on 6 dimensions (semantic, emotional, visual, audio, pacing, hero_score via geometric-mean fusion). `kb/tools/cut_detector.py` finds optimal cut points via Walter Murch's Rule of Six (emotion 0.51, story 0.23, rhythm 0.10, eye_trace 0.07, plane_2d 0.05, space_3d 0.04). Cuts respect 4 boundary types: shot (PySceneDetect), silence (Silero VAD), sentence-end (transcript), beat (librosa downbeats). Run `--analyze-only` to see the full analysis without executing a recipe.
 
 ### Phase 2: CLASSIFY — Route by Content Type
 
@@ -319,7 +325,13 @@ ffmpeg -i input.mp4 -vf "zoompan=z='min(zoom+0.002,1.2)':d=150:x='iw/2-(iw/zoom/
 # Implemented via zoompan with multiple keyframes
 ```
 
+### Phase 4.5: PLAN CRITIQUE (Phase 9) — ★ NOVEL ★
+
+> **As of Phase 9, the plan is red-teamed BEFORE execution.** `kb/tools/plan_critic.py` checks the EditPlan against 11 Hard Rules statically (HR#1, #2, #6, #9, #12, #15, #19, #22, #25, #27, #28), verifies SourceProfile assumptions match the source, confirms hero moments are preserved and dead zones eliminated, and validates plan-graph quality (acyclicity, connectivity, intent coverage). Optional LLM critique (Round 2, different model than planner) catches runtime failure risks. Catches 80% of failures before any FFmpeg call — no other agentic video editor in the wiki does this.
+
 ### Phase 5: VERIFY — Quality Gates
+
+> **As of Phase 9, the Reviewer scores 7 dimensions.** `kb/tools/reviewer.py` scores the final output on Adherence, Pacing, Visual Quality, Watchability, Audio, Narrative Coherence, and Overall (weighted composite). VMAF auto-correction: if VMAF < 80, re-encode with lower CRF + slower preset (max 2 retries). Outcome is recorded in the edit-pattern memory DB (`kb/tools/edit_memory.py`) so future runs learn which (content_type, technique, params) tuples succeed.
 
 After every step, verify. Never assume success.
 

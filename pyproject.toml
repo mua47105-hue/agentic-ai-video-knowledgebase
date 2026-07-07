@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentic-ai-video-knowledgebase"
-version = "0.7.0"
+version = "0.8.0"
 description = "AI video editing agent + knowledge base. Free, open-source, local-first."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -44,8 +44,27 @@ mcp = [
     "mcp-video>=1.5.1,<2.0",
     "faster-whisper>=1.0,<2.0",
 ]
+# Phase 6-9 intelligence layer (all optional — graceful degradation)
+probe = [
+    "av>=12.0,<15.0",
+    "pyscenedetect>=0.6.4,<0.7",
+    "silero-vad>=5.1.0,<6.0",
+    "demucs>=4.0.1,<5.0",
+    "speechbrain>=1.0.0,<2.0",
+    "easyocr>=1.7.0,<2.0",
+    "litellm>=1.40.0,<2.0",
+]
+probe-heavy = [
+    "mediapipe>=0.10.14,<0.11",
+    "open-clip-torch>=2.24.0,<3.0",
+    "pyannote.audio>=3.3.0,<4.0",
+]
 all = [
-    "agentic-ai-video-knowledgebase[core,audio,vision,nle,mcp]",
+    "agentic-ai-video-knowledgebase[core,audio,vision,nle,mcp,probe]",
+]
+dev = [
+    "pytest>=7.0,<9.0",
+    "pytest-cov>=4.0,<6.0",
 ]
 
 [project.scripts]
