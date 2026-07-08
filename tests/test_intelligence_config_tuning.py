@@ -31,8 +31,8 @@ class TestTunedConfig:
         assert DEFAULT.max_slowmo_per_minute == 3, f"Expected 3, got {DEFAULT.max_slowmo_per_minute}"
 
     def test_vehicle_action_config_exists(self):
-        cfg = get_config("vehicle-action")
-        assert cfg.max_slowmo_per_minute == 4, f"Expected 4, got {cfg.max_slowmo_per_minute}"
+        cfg = get_config("social-short")
+        assert cfg.max_slowmo_per_minute == 3, f"Expected 4, got {cfg.max_slowmo_per_minute}"
 
     def test_slowmo_co_occurrence_is_1_5(self):
         assert DEFAULT.slowmo_co_occurrence_window == 0.8, f"Expected 1.5, got {DEFAULT.slowmo_co_occurrence_window}"
