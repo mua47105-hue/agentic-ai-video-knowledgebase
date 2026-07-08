@@ -1,0 +1,72 @@
+name: livestream-highlights
+description: Extract best moments from livestream VOD, vertical reframe, add captions
+version: 1.0
+content_type: social-short
+target_platform: tiktok
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: scene_detect
+    tool: edit.detect_scenes
+    params:
+      threshold: 0.3
+    output: scenes
+
+  - operation: find_segments
+    tool: recipe.find_engaging_segments
+    params:
+      min_duration: 15
+      max_duration: 45
+    output: segment_list
+
+  - operation: for_each_segment
+    parallel: true
+    loop_var: segment
+    source: segment_list
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$segment.start"
+          duration: "$segment.duration"
+          accurate: true
+
+      - operation: resize_vertical
+        tool: edit.resize
+        params:
+          width: 1080
+          height: 1920
+
+      - operation: add_captions
+        tool: edit.text_subtitles
+        params:
+          style: mrbeast_bounce
+          max_lines: 2
+          chars_per_line: 28
+
+      - operation: loudnorm
+        tool: edit.loudnorm_limited
+        params:
+          target_lufs: -14
+          true_peak: -1.0
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: tiktok-vertical
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: lufs_within_1db
+    target: -14
