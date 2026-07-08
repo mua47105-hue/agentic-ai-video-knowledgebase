@@ -23,7 +23,7 @@ class IntelligenceConfig:
     (or use the DEFAULT config for all content types)."""
 
     # ── Relevance Map (relevance_map.py) ──
-    hero_threshold: float = 0.6
+    hero_threshold: float = 0.5
     """Minimum hero_score for a window to be a hero moment."""
     dead_zone_threshold: float = 0.20
     """Maximum score (all dims below) for a window to be a dead zone."""
