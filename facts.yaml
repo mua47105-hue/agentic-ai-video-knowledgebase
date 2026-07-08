@@ -9,7 +9,7 @@ repo:
 modules:
   kb_tools_count: 42
   recipes_count: 12
-  test_count: 111
+  test_count: 194
 
 tools:
   mcp_video_tool_count: "~140"

@@ -1372,8 +1372,39 @@ def run_recipe(
                 print(f"Note: Artifact store unavailable: {e}", file=sys.stderr)
 
     # ── Step execution ──
+    # Phantom-limb fix: when edit_plan exists, use its intelligence-informed
+    # params to override recipe YAML params for matching tools. This doesn't
+    # change step structure (for_each loops stay intact), but ensures the
+    # intelligence layer's decisions (e.g. color_grade preset, speed factor,
+    # silence threshold) actually influence execution.
+    edit_plan_steps = (context.get("_edit_plan") or {}).get("steps", [])
+    edit_plan_by_tool: dict[str, dict] = {}
+    for eps in edit_plan_steps:
+        tool = eps.get("tool", "")
+        if tool:
+            edit_plan_by_tool[tool] = eps
+
     for i, step in enumerate(recipe.get("steps", [])):
         context["_step_idx"] = i
+
+        # Phantom-limb fix: if edit_plan has a step with the same tool,
+        # merge its params (intelligence-informed) into the recipe step's params.
+        # Recipe YAML params take precedence for structural things (start, duration),
+        # edit_plan params override for creative things (preset, style, factor).
+        tool_name = step.get("tool", "")
+        if tool_name in edit_plan_by_tool:
+            ep_step = edit_plan_by_tool[tool_name]
+            ep_params = ep_step.get("params", {})
+            ep_reasoning = ep_step.get("reasoning", "")
+            # Merge: edit_plan params that don't exist in recipe step get added
+            # (recipe YAML's explicit params always win — they have $var substitutions)
+            for k, v in ep_params.items():
+                if k not in step.get("params", {}):
+                    step.setdefault("params", {})[k] = v
+            # Always inject reasoning from edit_plan (for HR#29 compliance)
+            if ep_reasoning and not step.get("reasoning"):
+                step["reasoning"] = ep_reasoning
+
         step_result = _execute_step(step, context, input_path, str(out_path))
         step["_index"] = i
         step_result["step_index"] = i

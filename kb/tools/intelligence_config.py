@@ -120,6 +120,41 @@ _OVERRIDES: dict[str, IntelligenceConfig] = {
         dead_zone_threshold=0.20,
         max_slowmo_per_minute=0,  # no slow-mo for podcasts
     ),
+    "music-video": IntelligenceConfig(
+        hero_threshold=0.45,
+        dead_zone_threshold=0.15,
+        max_slowmo_per_minute=4,
+        motion_only_threshold=2.0,
+        co_occurrence_window=0.5,
+        max_effects_per_minute=5,  # music videos can have more effects
+    ),
+    "event": IntelligenceConfig(
+        hero_threshold=0.55,
+        dead_zone_threshold=0.22,
+        max_slowmo_per_minute=2,
+    ),
+    "interview": IntelligenceConfig(
+        hero_threshold=0.6,
+        dead_zone_threshold=0.25,
+        max_slowmo_per_minute=1,
+    ),
+    "talking-head": IntelligenceConfig(
+        hero_threshold=0.6,
+        dead_zone_threshold=0.25,
+        max_slowmo_per_minute=1,
+    ),
+    "documentary": IntelligenceConfig(
+        hero_threshold=0.55,
+        dead_zone_threshold=0.20,
+        max_slowmo_per_minute=1,
+        max_effects_per_minute=2,  # documentaries should be restrained
+    ),
+    "tutorial": IntelligenceConfig(
+        hero_threshold=0.6,
+        dead_zone_threshold=0.25,
+        max_slowmo_per_minute=1,
+        max_effects_per_minute=2,
+    ),
 }
 
 
