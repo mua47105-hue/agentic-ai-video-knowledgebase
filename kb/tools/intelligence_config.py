@@ -55,7 +55,7 @@ class IntelligenceConfig:
     """Seconds tolerance for snapping cuts to music section boundaries."""
 
     # ── Probe Layer (probe.py, probe_visual.py, probe_audio.py) ──
-    motion_sample_stride: int = 2
+    motion_sample_stride: int = 3
     """Sample every Nth frame for motion energy (2 = every 2nd frame)."""
     aesthetic_sample_interval: float = 4.0
     """Sample one frame every N seconds for aesthetic scoring."""
