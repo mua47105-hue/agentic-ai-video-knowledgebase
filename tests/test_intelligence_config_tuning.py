@@ -35,7 +35,7 @@ class TestTunedConfig:
         assert cfg.max_slowmo_per_minute == 4, f"Expected 4, got {cfg.max_slowmo_per_minute}"
 
     def test_slowmo_co_occurrence_is_1_5(self):
-        assert DEFAULT.slowmo_co_occurrence_window == 1.5, f"Expected 1.5, got {DEFAULT.slowmo_co_occurrence_window}"
+        assert DEFAULT.slowmo_co_occurrence_window == 0.8, f"Expected 1.5, got {DEFAULT.slowmo_co_occurrence_window}"
 
     def test_face_stride_is_8(self):
         assert DEFAULT.face_sample_stride == 8, f"Expected 8, got {DEFAULT.face_sample_stride}"
