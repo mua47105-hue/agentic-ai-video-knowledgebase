@@ -1,0 +1,70 @@
+name: promo-trailer
+description: Multi-source promo trailer with text interstitials, voiceover pacing, cinematic grade
+version: 1.0
+content_type: cinematic
+target_platform: youtube
+output_lufs: -16
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: scene_detect
+    tool: edit.detect_scenes
+    params:
+      threshold: 0.25
+    output: scenes
+
+  - operation: find_key_moments
+    tool: recipe.find_key_moments
+    params:
+      max_duration_per_moment: 8
+    output: moments_list
+
+  - operation: for_each_moment
+    parallel: false
+    loop_var: moment
+    source: moments_list
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$moment.start"
+          duration: "$moment.duration"
+          accurate: true
+
+      - operation: color_grade
+        tool: edit.color_grade
+        params:
+          preset: cinematic
+
+      - operation: add_captions
+        tool: edit.text_subtitles
+        params:
+          style: apple_premium
+          max_lines: 2
+          chars_per_line: 42
+
+      - operation: loudnorm
+        tool: edit.loudnorm_limited
+        params:
+          target_lufs: -16
+          true_peak: -1.0
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: youtube-1080p
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: lufs_within_1db
+    target: -16

@@ -16,3 +16,4 @@ acfc9be	0.995	4.2	6/6	keep	increase face stride 6->8 (speed)
 ca21dc7	0.995	4.1	6/6	keep	widen section_tolerance 1.0->1.5s
 abbd34c	0.987	4.3	6/6	keep	add config tuning tests (15 new tests)
 e0770cc	1.037	4.2	6/6	keep	add livestream-highlights recipe
+ceee4a1	1.088	4.2	6/6	keep	add gaming-highlights recipe
