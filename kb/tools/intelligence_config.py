@@ -49,7 +49,7 @@ class IntelligenceConfig:
     # ── Cut Detector (cut_detector.py) ──
     min_cut_score: float = 0.55
     """Minimum Murch composite score for a cut point to be returned."""
-    beat_tolerance: float = 0.1
+    beat_tolerance: float = 0.15
     """Seconds tolerance for snapping cuts to beats."""
     section_tolerance: float = 1.0
     """Seconds tolerance for snapping cuts to music section boundaries."""
