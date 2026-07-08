@@ -30,6 +30,7 @@ class IntelligenceConfig:
     adaptive_dead_zone: bool = True
     """If True, lower dead_zone_threshold when max_hero_score < 0.3."""
     dead_zone_min_duration: int = 2
+    adaptive_threshold_multiplier: float = 0.6  # avg_hero_score * this = dead_zone_threshold
     """Minimum consecutive seconds to flag as a dead zone."""
 
     # ── Hero Detector (hero_detector.py) ──
