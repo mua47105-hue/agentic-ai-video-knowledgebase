@@ -89,6 +89,12 @@ _OVERRIDES: dict[str, IntelligenceConfig] = {
         max_slowmo_per_minute=4,
         motion_only_threshold=2.0,
     ),
+    "promo": IntelligenceConfig(
+        hero_threshold=0.6,
+        dead_zone_threshold=0.20,
+        max_slowmo_per_minute=1,
+        co_occurrence_window=1.2,
+    ),
     "livestream": IntelligenceConfig(
         hero_threshold=0.55,
         dead_zone_threshold=0.25,
