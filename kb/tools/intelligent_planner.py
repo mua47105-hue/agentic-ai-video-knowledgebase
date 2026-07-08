@@ -74,6 +74,46 @@ def generate_plan(source_profile: dict, relevance_map: dict,
                           slowmo_proposals, music_sync_plan, content_type, intents,
                           memory_hints)
     plan["editing_blueprint"] = editing_blueprint
+
+    # S3: On-demand research loop — check for composite pattern matches before
+    # falling back to boring atomic steps. If no match, log a research gap.
+    try:
+        from kb.tools.edit_memory import EditPatternDB
+        db = EditPatternDB()
+        # Ensure built-in patterns are seeded
+        db.seed_builtin_patterns()
+
+        # Detect available triggers from the intelligence layer
+        triggers = []
+        if slowmo_proposals:
+            triggers.append("high_motion_peak")
+        if any(h.get("level", 0) >= 2 for h in (relevance_map or {}).get("hero_moments", [])):
+            triggers.append("hero_moment")
+            triggers.append("semantic_salience_peak")
+        if music_sync_plan and music_sync_plan.get("structure"):
+            triggers.append("beat_drop_detected")
+        if source_profile.get("visual", {}).get("scene_boundaries", []):
+            triggers.append("scene_boundary")
+        if any(p.get("moment_type") == "impact" for p in slowmo_proposals):
+            triggers.append("has_forward_action_clip")
+
+        # Query composite patterns matching our triggers
+        composite_matches = db.query_composite_patterns(content_type, triggers=triggers)
+        if composite_matches:
+            plan["composite_patterns_matched"] = [m["name"] for m in composite_matches]
+            plan["composite_patterns"] = composite_matches
+        else:
+            # S3: Research gap — no matching technique in edit_memory or signature-move library
+            plan["research_gap"] = {
+                "triggers_available": triggers,
+                "content_type": content_type,
+                "message": "No composite pattern matched. Consider researching new techniques.",
+                "suggested_search": f"video editing technique for {content_type} with {', '.join(triggers[:3])}",
+            }
+    except Exception as e:
+        import sys
+        print(f"[debug] composite pattern lookup failed: {e}", file=sys.stderr)
+
     return plan
 
 

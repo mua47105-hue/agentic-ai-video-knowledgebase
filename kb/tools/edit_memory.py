@@ -63,6 +63,23 @@ class EditPatternDB:
                 )
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_content_type ON edit_patterns(content_type)")
+
+            # S2: Composite patterns table — multi-step named techniques (e.g., reverse_into_drop)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS composite_patterns (
+                    name TEXT PRIMARY KEY,
+                    content_type TEXT,
+                    triggers TEXT,
+                    steps_json TEXT,
+                    constraints_json TEXT,
+                    confidence TEXT DEFAULT 'unverified',
+                    success_count INTEGER DEFAULT 0,
+                    fail_count INTEGER DEFAULT 0,
+                    last_used TEXT,
+                    created TEXT
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_composite_content_type ON composite_patterns(content_type)")
             conn.commit()
 
     @staticmethod
@@ -141,4 +158,137 @@ class EditPatternDB:
             total = cursor.fetchone()[0]
             cursor = conn.execute("SELECT content_type, COUNT(*) FROM edit_patterns GROUP BY content_type")
             by_type = {r[0]: r[1] for r in cursor.fetchall()}
-        return {"total_patterns": total, "by_content_type": by_type}
+            cursor = conn.execute("SELECT COUNT(*) FROM composite_patterns")
+            composite_total = cursor.fetchone()[0]
+        return {"total_patterns": total, "by_content_type": by_type,
+                "composite_patterns": composite_total}
+
+    # ── S2: Composite pattern methods ──
+
+    def add_composite_pattern(self, name: str, content_type: str, triggers: list[str],
+                              steps: list[dict], constraints: dict,
+                              confidence: str = "unverified") -> None:
+        """Add or update a composite (multi-step) editing pattern."""
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO composite_patterns
+                (name, content_type, triggers, steps_json, constraints_json, confidence, created)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (name, content_type, json.dumps(triggers), json.dumps(steps),
+                  json.dumps(constraints), confidence, now))
+            conn.commit()
+
+    def query_composite_patterns(self, content_type: str,
+                                  triggers: t.Optional[list[str]] = None,
+                                  confidence_min: str = "unverified") -> list[dict]:
+        """Find composite patterns matching content_type and optionally triggers."""
+        confidence_order = {"unverified": 0, "testing": 1, "verified": 2}
+        min_conf = confidence_order.get(confidence_min, 0)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT * FROM composite_patterns WHERE content_type=? OR content_type='*'",
+                (content_type,))
+            rows = cursor.fetchall()
+
+        results = []
+        for r in rows:
+            conf = r["confidence"] or "unverified"
+            if confidence_order.get(conf, 0) < min_conf:
+                continue
+            pattern_triggers = json.loads(r["triggers"] or "[]")
+            if triggers and not any(t in pattern_triggers for t in triggers):
+                continue
+            results.append({
+                "name": r["name"],
+                "content_type": r["content_type"],
+                "triggers": pattern_triggers,
+                "steps": json.loads(r["steps_json"] or "[]"),
+                "constraints": json.loads(r["constraints_json"] or "{}"),
+                "confidence": conf,
+                "success_count": r["success_count"],
+                "fail_count": r["fail_count"],
+            })
+        return results
+
+    def record_composite_outcome(self, name: str, success: bool) -> None:
+        """Record success/failure of a composite pattern. Promotes confidence after N successes."""
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        with sqlite3.connect(self.db_path) as conn:
+            if success:
+                conn.execute("""
+                    UPDATE composite_patterns SET success_count=success_count+1, last_used=?
+                    WHERE name=?
+                """, (now, name))
+            else:
+                conn.execute("""
+                    UPDATE composite_patterns SET fail_count=fail_count+1, last_used=?
+                    WHERE name=?
+                """, (now, name))
+            # Promote confidence after 3+ successes with >70% rate
+            cursor = conn.execute(
+                "SELECT success_count, fail_count FROM composite_patterns WHERE name=?", (name,))
+            row = cursor.fetchone()
+            if row:
+                sc, fc = row
+                total = sc + fc
+                if total >= 3 and sc / total >= 0.7 and sc >= 3:
+                    conn.execute("UPDATE composite_patterns SET confidence='verified' WHERE name=?", (name,))
+            conn.commit()
+
+    def seed_builtin_patterns(self) -> None:
+        """Seed built-in composite patterns (the 'signature move' library)."""
+        builtin = [
+            {
+                "name": "reverse_into_drop",
+                "content_type": "*",
+                "triggers": ["beat_drop_detected", "has_forward_action_clip"],
+                "steps": [
+                    {"operation": "reverse", "tool": "edit.reverse", "params": {"duration": "0.6-1.2s pre-drop"}},
+                    {"operation": "hold_frame", "tool": "edit.trim", "params": {"duration": "0.1-0.2s at drop onset"}},
+                    {"operation": "resume_forward", "tool": "edit.speed", "params": {"factor": 1.0, "start": "drop_timestamp"}},
+                    {"operation": "music_gate", "tool": "edit.add_audio", "params": {"mode": "duck_until_drop"}},
+                ],
+                "constraints": {
+                    "drop_timestamp": "from music_sync.detect_structure() downbeat/onset spike",
+                    "source_clip": "must have detectable forward motion (probe_visual motion_energy > 0.3)",
+                },
+                "confidence": "unverified",
+            },
+            {
+                "name": "whip_pan_cut",
+                "content_type": "*",
+                "triggers": ["high_motion_peak", "scene_boundary"],
+                "steps": [
+                    {"operation": "speed_ramp_up", "tool": "edit.speed", "params": {"factor": 3.0, "duration": "0.15s"}},
+                    {"operation": "cut", "tool": "edit.trim", "params": {"accurate": True}},
+                    {"operation": "speed_ramp_down", "tool": "edit.speed", "params": {"factor": 0.5, "duration": "0.1s"}},
+                ],
+                "constraints": {
+                    "motion_peak": "sigma >= 2.5 at cut point",
+                    "scene_boundary": "cut must align with detected scene boundary",
+                },
+                "confidence": "unverified",
+            },
+            {
+                "name": "zoom_punch",
+                "content_type": "*",
+                "triggers": ["hero_moment", "semantic_salience_peak"],
+                "steps": [
+                    {"operation": "crop_zoom", "tool": "edit.crop", "params": {"zoom": "1.3x centered on face/subject"}},
+                    {"operation": "hold", "tool": "edit.trim", "params": {"duration": "0.3-0.5s"}},
+                    {"operation": "zoom_out", "tool": "edit.crop", "params": {"zoom": "1.0x (return to full frame)"}},
+                ],
+                "constraints": {
+                    "hero_moment": "level >= 2 from hero_detector",
+                    "duration": "total zoom_punch <= 0.8s",
+                },
+                "confidence": "unverified",
+            },
+        ]
+        for p in builtin:
+            self.add_composite_pattern(
+                p["name"], p["content_type"], p["triggers"],
+                p["steps"], p["constraints"], p["confidence"]
+            )

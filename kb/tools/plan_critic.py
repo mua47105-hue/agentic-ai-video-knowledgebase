@@ -38,6 +38,9 @@ HARD_RULES_CHECKABLE = [
      "check": "every speed<1.0 step references a slowmo_engine proposal"},
     {"id": "HR#28", "description": "Pattern-interrupt interval must match content type",
      "check": "paced_plan summary has 0 pacing_violations"},
+    # HR#29: Restraint/taste layer — every embellishment must cite a justifying signal
+    {"id": "HR#29", "description": "Every non-cut embellishment (color grade, transition, text, slow-mo, SFX) must cite a justifying signal from relevance_map or hero_detector",
+     "check": "all non-cut, non-probe, non-render steps have reasoning referencing a signal"},
 ]
 
 
@@ -108,6 +111,24 @@ def _static_rule_check(plan: dict, profile: dict, content_type: str) -> list[dic
             if not step.get("reasoning") or "slowmo" not in step.get("reasoning", "").lower():
                 violations.append({"rule": "HR#27", "severity": "warning",
                                   "detail": f"step {i} (speed factor {params['factor']}): no slowmo_engine reference"})
+
+        # HR#29: Restraint layer — embellishment steps must cite a justifying signal
+        EMBELLISHMENT_TOOLS = {"color_grade", "ai_color_grade", "blur", "fade",
+                               "effect_chromatic_aberration", "effect_glow", "effect_noise",
+                               "effect_scanlines", "effect_vignette",
+                               "text_animated", "add_text", "add_audio",
+                               "transition_glitch", "transition_morph", "transition_pixelate",
+                               "watermark", "layout_pip", "layout_grid"}
+        fn_name = tool.split(".")[-1] if "." in tool else tool
+        if fn_name in EMBELLISHMENT_TOOLS:
+            reasoning = step.get("reasoning", "").lower()
+            signal_keywords = ["hero", "relevance", "motion peak", "emotion", "aesthetic",
+                             "beat", "onset", "semantic", "dead zone", "signal",
+                             "slowmo", "pacing", "content_type", "hook"]
+            has_signal_ref = any(kw in reasoning for kw in signal_keywords)
+            if not has_signal_ref:
+                violations.append({"rule": "HR#29", "severity": "warning",
+                                  "detail": f"step {i} ({tool}): embellishment without justifying signal reference in reasoning"})
 
         if "merge" in tool or "xfade" in str(params):
             offset = params.get("offset")

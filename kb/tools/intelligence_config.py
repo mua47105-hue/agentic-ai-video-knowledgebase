@@ -67,6 +67,14 @@ class IntelligenceConfig:
     speech_cv_threshold: float = 0.12
     """Coefficient of variation below which audio is considered non-speech."""
 
+    # ── Restraint / Effect Density Cap (HR#29) ──
+    max_effects_per_minute: int = 3
+    """Maximum non-cut embellishment steps (color, fx, text, transition) per minute.
+    Content types with high energy (social-short, music-video) can have more;
+    documentary/cinematic should have fewer."""
+    effect_density_penalty: float = 0.1
+    """Score penalty per effect above the cap, applied in reviewer scoring."""
+
 
 # Default config (used by all content types unless overridden)
 DEFAULT = IntelligenceConfig()

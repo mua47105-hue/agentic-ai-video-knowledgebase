@@ -61,6 +61,35 @@ def review_output(output_path: str, edit_plan: dict, source_profile: dict,
     overall = 0.0
     for s in scores:
         overall += DIMENSION_WEIGHTS.get(s["dimension"], 0) * s["score"]
+
+    # HR#29: Effect-density penalty — penalize plans with excessive embellishments
+    from kb.tools.intelligence_config import get_config as _get_cfg
+    _cfg = _get_cfg(content_type)
+    _embellish_tools = {"color_grade", "ai_color_grade", "blur", "fade",
+                        "effect_chromatic_aberration", "effect_glow", "effect_noise",
+                        "effect_scanlines", "effect_vignette",
+                        "text_animated", "add_text", "add_audio",
+                        "transition_glitch", "transition_morph", "transition_pixelate",
+                        "watermark", "layout_pip", "layout_grid"}
+    _plan_steps = edit_plan.get("steps", [])
+    _embellish_count = sum(1 for s in _plan_steps
+                          if s.get("tool", "").split(".")[-1] in _embellish_tools)
+    _duration = 1.0
+    try:
+        import subprocess as _sp
+        _probe = _sp.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                         "-of", "default=noprint_wrappers=1:nokey=1", output_path],
+                        capture_output=True, text=True, timeout=10)
+        _duration = float(_probe.stdout.strip() or 1.0)
+    except Exception:
+        pass
+    _effects_per_min = _embellish_count / max(_duration / 60.0, 0.01)
+    _excess = max(0, _effects_per_min - _cfg.max_effects_per_minute)
+    if _excess > 0:
+        _penalty = _excess * _cfg.effect_density_penalty
+        overall = max(0.0, overall - _penalty)
+        corrections.append(f"Effect-density penalty: -{_penalty:.3f} ({_embellish_count} effects in {_duration:.0f}s = {_effects_per_min:.1f}/min, cap={_cfg.max_effects_per_minute})")
+
     overall = round(overall, 3)
     passed = overall >= overall_threshold
 
