@@ -39,7 +39,7 @@ class IntelligenceConfig:
     # ── Slow-Mo Engine (slowmo_engine.py) ──
     motion_sigma_threshold: float = 2.0
     """Minimum sigma for a motion peak to be considered for slow-mo."""
-    motion_only_threshold: float = 3.0
+    motion_only_threshold: float = 2.5
     """Sigma above which slow-mo is proposed even without audio onset."""
     slowmo_co_occurrence_window: float = 0.8
     """Seconds within which audio onset must co-occur with motion peak."""
