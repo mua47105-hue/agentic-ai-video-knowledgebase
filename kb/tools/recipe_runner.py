@@ -1325,7 +1325,8 @@ def run_recipe(
                                        action=f"sub_agents={list(orchestration.get('sub_agents', {}).keys())}",
                                        output=orchestration.get("parallel_groups", []),
                                        reasoning="Phase 5 Project Montage per-modality sub-agents")
-                    except Exception:
+                    except Exception as _e:
+                        print(f"[debug] build_orchestrate failed: {_e}", file=sys.stderr)
                         pass
 
                 if logger is not None:
@@ -1578,7 +1579,8 @@ def run_recipe(
     if context.get("_artifact_store") and review_result:
         try:
             context["_artifact_store"].save_json("review", review_result)
-        except Exception:
+        except Exception as _e:
+            print(f"[debug] artifact save review failed: {_e}", file=sys.stderr)
             pass
 
     # ── Finalize manifest ──
@@ -1724,7 +1726,8 @@ def cli() -> None:
                 with open(recipe_path_an) as f:
                     r = yaml.safe_load(f) or {}
                 content_type_an = r.get("content_type", "vlog")
-            except Exception:
+            except Exception as _e:
+                print(f"[debug] recipe content_type load failed: {_e}", file=sys.stderr)
                 pass
         # Speed: use cache-or-probe (60x speedup on cache hit)
         if _get_or_probe is not None:

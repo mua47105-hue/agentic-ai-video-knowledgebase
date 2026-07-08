@@ -28,28 +28,38 @@ import typing as t
 # Default model per task type. Order: cloud-first (if API key set) then local fallback.
 DEFAULT_MODELS: dict[str, list[str]] = {
     "plan": [
-        "claude-sonnet-4-20250514",      # via litellm if ANTHROPIC_API_KEY set
-        "gpt-4o",                         # via litellm if OPENAI_API_KEY set
-        "ollama/qwen2.5-coder:7b",        # local fallback (always available if ollama running)
+        "claude-sonnet-4-20250514",      # Anthropic
+        "gpt-4o",                         # OpenAI
+        "gemini/gemini-2.5-pro",          # Google (via litellm)
+        "groq/llama-3.3-70b-versatile",   # Groq (fast inference)
+        "ollama/qwen2.5-coder:7b",        # local fallback
     ],
     "critic": [
         "gpt-4o-mini",                    # different family than planner (ensemble diversity)
-        "claude-haiku-4-20250506",        # FIX: added Anthropic for reviewer ensemble
+        "claude-haiku-4-20250506",
+        "gemini/gemini-2.5-flash",        # Google fast model
+        "groq/llama-3.3-70b-versatile",
         "ollama/qwen2.5-coder:7b",
     ],
     "reviewer": [
         "gpt-4o-mini",
-        "claude-haiku-4-20250506",        # FIX: added Anthropic entry (was missing — broke ensemble)
+        "claude-haiku-4-20250506",
+        "gemini/gemini-2.5-flash",
         "ollama/qwen2.5-coder:7b",
     ],
     "research": [
         "claude-sonnet-4-20250514",
+        "gemini/gemini-2.5-pro",
         "ollama/qwen2.5-coder:7b",
     ],
     "score": [
-        "ollama/qwen2.5-coder:7b",        # lightweight, high-volume — local preferred
+        "groq/llama-3.3-70b-versatile",   # fast + cheap for high-volume scoring
+        "ollama/qwen2.5-coder:7b",
     ],
 }
+
+# Review date for model strings — update when models are refreshed
+_MODELS_REVIEW_DATE = "2026-07-08"
 
 
 class LLMRouter:
@@ -152,17 +162,29 @@ class LLMRouter:
 
     def available(self) -> bool:
         """Returns True if ANY model is reachable."""
-        return self._litellm is not None or self._ollama_running()
+        return self._litellm is not None or self._is_ollama_running()
 
-    @staticmethod
-    def _ollama_running() -> bool:
+    # S4 fix: cache ollama_running per-process to avoid repeated subprocess calls
+    _OLLAMA_RUNNING_CACHE: t.Optional[bool] = None
+
+    @classmethod
+    def _is_ollama_running(cls) -> bool:
+        """Check if ollama is running. Cached per-process to avoid repeated subprocess overhead."""
+        if cls._OLLAMA_RUNNING_CACHE is not None:
+            return cls._OLLAMA_RUNNING_CACHE
         try:
             result = subprocess.run(
                 ["ollama", "list"], capture_output=True, text=True, timeout=5,
             )
-            return result.returncode == 0
+            cls._OLLAMA_RUNNING_CACHE = (result.returncode == 0)
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            return False
+            cls._OLLAMA_RUNNING_CACHE = False
+        return cls._OLLAMA_RUNNING_CACHE
+
+    # Keep old method name for backward compat (delegates to cached version)
+    @staticmethod
+    def _ollama_running() -> bool:
+        return LLMRouter._is_ollama_running()
 
     def status(self) -> dict:
         """Return routing status for debugging."""

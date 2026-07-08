@@ -1,0 +1,32 @@
+# facts.yaml — Single machine-readable source of truth for repo facts.
+# All docs, tests, and CI should reference these values, not hardcoded numbers.
+# When you add a recipe, tool, or module, update this file. CI tests verify docs match.
+
+repo:
+  name: agentic-ai-video-knowledgebase
+  version: "0.8.0"
+
+modules:
+  kb_tools_count: 42
+  recipes_count: 12
+  test_count: 111
+
+tools:
+  mcp_video_tool_count: "~140"
+  ffmpeg_adapter_tool_count: "~37"
+  unified_adapter_symbol_count: "~151"
+
+files:
+  setup_script: "setup.sh"
+  agent_skill: "SKILL.md"
+  agent_router: "AGENTS.md"
+  claude_instructions: "CLAUDE.md"
+  wiki_maintenance: "kb/wiki/MAINTENANCE.md"
+  content_types: "kb/tools/content_types.py"
+  intelligence_config: "kb/tools/intelligence_config.py"
+  tool_registry: "kb/tools/tool_registry.py"
+  typed_models: "kb/tools/typed_models.py"
+  profile_cache: "kb/tools/profile_cache.py"
+
+# Review date for model strings in llm_router.py
+llm_models_review_date: "2026-07-08"

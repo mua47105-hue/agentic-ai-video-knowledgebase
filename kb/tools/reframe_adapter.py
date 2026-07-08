@@ -1,6 +1,6 @@
 """
 Smart vertical reframe: detect faces via OpenCV Haar cascade, choose
-TRACK vs LETTERBOX strategy per scene, and render a 9:16 output.
+TRACK vs LETTERBOX strategy, and render a 9:16 output.
 
 Gated: requires ``opencv-python-headless`` (``pip install opencv-python-headless``).
 Off by default — never added to setup.sh.
@@ -9,14 +9,18 @@ Usage:
     from kb.tools.reframe_adapter import smart_reframe
     result = smart_reframe("input.mp4", "output.mp4")
 
-Architecture (matches AutoFlip-style):
-    1. Scene detection via existing edit.detect_scenes()
-    2. Per-scene face detection via Haar cascade
-    3. Per-scene strategy:
-       - TRACK:  follow detected face(s) with temporal smoothing
-       - LETTERBOX: scale-to-fill + blurred background when faces are spread
+Architecture:
+    1. Sample frames at regular intervals (every Nth frame)
+    2. Per-sample face detection via Haar cascade
+    3. Global strategy selection (majority vote across all samples):
+       - TRACK:  follow detected face(s) with EMA-smoothed keyframe crop path
+       - LETTERBOX: scale-to-fill + gblur background when faces are spread
        - CENTER (fallback): static center-crop when no face detected
     4. FFmpeg render with crop/scale filter chain
+
+Note: This is NOT per-scene — it's a global strategy. The docstring previously
+claimed per-scene detection via edit.detect_scenes(), but that was never
+implemented. The current design samples all frames and votes globally.
 """
 
 from __future__ import annotations

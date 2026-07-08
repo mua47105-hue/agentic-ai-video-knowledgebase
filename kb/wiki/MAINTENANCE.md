@@ -6,7 +6,7 @@
 
 - Every page is markdown with `.md` extension, kebab-case filenames
 - Every page gets YAML frontmatter: `title`, `type`, `tags`, `created`, `updated`, `sources`, `related`
-- Internal links use relative paths without `.md`: `[MCP Servers](../entities/mcp-video-servers)`
+- Internal links use relative paths without `.md`: `[MCP Servers](entities/mcp-video-servers)`
 - Keep pages focused. If a page exceeds ~300 lines, split into sub-pages
 
 ## Page types
