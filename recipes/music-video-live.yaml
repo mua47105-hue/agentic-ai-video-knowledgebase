@@ -1,0 +1,77 @@
+name: music-video-live
+description: Music video from live footage with stem-separated sync and multi-cam switching
+version: 1.0
+content_type: music-video
+target_platform: youtube
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: transcribe
+    tool: edit.transcribe
+    params:
+      model: base
+    output: transcript
+
+  - operation: scene_detect
+    tool: edit.detect_scenes
+    params:
+      threshold: 0.35
+    output: scenes
+
+  - operation: find_action_moments
+    tool: recipe.find_action_moments
+    params:
+      min_duration: 1
+      max_duration: 6
+      min_energy_threshold: 0.5
+    output: action_clips
+
+  - operation: for_each_moment
+    parallel: true
+    loop_var: clip
+    source: action_clips
+    steps:
+      - operation: extract
+        tool: edit.trim
+        params:
+          start: "$clip.start"
+          duration: "$clip.duration"
+          accurate: true
+
+      - operation: velocity_ramp
+        tool: edit.speed
+        params:
+          factor: 1.2
+
+      - operation: color_grade
+        tool: edit.color_grade
+        params:
+          preset: vivid
+
+      - operation: add_captions
+        tool: edit.text_subtitles
+        params:
+          style: mrbeast_bounce
+          max_lines: 2
+          chars_per_line: 28
+
+      - operation: loudnorm
+        tool: edit.loudnorm_limited
+        params:
+          target_lufs: -14
+          true_peak: -1.0
+
+      - operation: render
+        tool: edit.render
+        params:
+          profile: youtube-1080p
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: lufs_within_1db
+    target: -14
