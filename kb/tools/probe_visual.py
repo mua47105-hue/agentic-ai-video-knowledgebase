@@ -574,6 +574,7 @@ def probe_ocr(video_path: str, fps: float, duration: float,
 # ── Top-level visual probe ──
 
 def probe_visual(video_path: str) -> VisualProfile:
+    from kb.tools.intelligence_config import DEFAULT as _cfg
     """Run all available visual probes, merge into VisualProfile."""
     profile = VisualProfile()
     components: list[str] = []
@@ -610,7 +611,7 @@ def probe_visual(video_path: str) -> VisualProfile:
 
     # 3. Motion energy + peaks (opencv) — sample every 2nd frame (2x speedup, no quality loss for peak detection)
     motion_features, profile.motion_peaks = probe_motion(
-        video_path, profile.fps, profile.duration, sample_stride=2
+        video_path, profile.fps, profile.duration, sample_stride=_cfg.motion_sample_stride
     )
     if motion_features:
         components.append("opencv_motion")
