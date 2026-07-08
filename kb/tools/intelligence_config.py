@@ -82,6 +82,12 @@ _OVERRIDES: dict[str, IntelligenceConfig] = {
         dead_zone_threshold=0.30,
         max_slowmo_per_minute=1,
     ),
+    "vehicle-action": IntelligenceConfig(
+        hero_threshold=0.45,
+        dead_zone_threshold=0.18,
+        max_slowmo_per_minute=4,
+        motion_only_threshold=2.0,
+    ),
     "podcast": IntelligenceConfig(
         hero_threshold=0.65,
         dead_zone_threshold=0.20,
