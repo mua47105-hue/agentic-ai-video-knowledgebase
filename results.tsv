@@ -9,3 +9,4 @@ cd6c107	0.995	4.4	6/6	keep	increase motion stride 2->3 (speed)
 46a5555	0.995	4.2	6/6	keep	lower hero_threshold 0.6->0.5
 9291880	0.995	4.1	6/6	keep	increase max_slowmo 2->3/min
 4b3f698	0.995	4.1	6/6	keep	add vehicle-action pacing profile
+5fcc1d7	0.995	4.2	6/6	keep	widen slowmo co-occurrence 1.0->1.5s

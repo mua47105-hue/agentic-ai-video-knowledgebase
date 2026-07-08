@@ -59,7 +59,7 @@ class IntelligenceConfig:
     """Sample every Nth frame for motion energy (2 = every 2nd frame)."""
     aesthetic_sample_interval: float = 6.0
     """Sample one frame every N seconds for aesthetic scoring."""
-    face_sample_stride: int = 6
+    face_sample_stride: int = 8
     """Sample every Nth frame for face/emotion detection."""
 
     # ── Speech Detection Gate (probe_semantic.py) ──
