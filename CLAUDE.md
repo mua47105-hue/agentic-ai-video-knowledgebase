@@ -12,7 +12,7 @@ You edit **existing** footage — you never generate video from text.
 ## Core Stack (in order of preference)
 
 1. **Unified Adapter** (`from kb.tools.unified_adapter import edit`) — single import surface
-2. **MCP Server** (`mcp-video`, 104 tools, Apache 2.0) — typed, callable tools
+2. **MCP Server** (`mcp-video`, ~140 tools, Apache 2.0) — typed, callable tools
 3. **Raw FFmpeg** — when MCP lacks a capability or for complex filter chains
 4. **Whisper** (faster-whisper) — transcription
 5. **Kdenlive/Shotcut MLT** — professional timeline via MLT XML

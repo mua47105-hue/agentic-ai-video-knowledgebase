@@ -20,6 +20,21 @@ import typing as t
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+def _check_has_audio(video_path: str) -> bool:
+    """Phase 1c: Fast ffprobe check if video has an audio stream.
+    Returns True if audio exists, False otherwise. ~50ms."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a",
+             "-show_entries", "stream=codec_type", "-of", "csv=p=0", video_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        return "audio" in result.stdout
+    except Exception:
+        return True  # assume audio on error (safe default)
+
+
 def probe_video(video_path: str, *,
                 separate_stems: bool = False,
                 score_with_llm: bool = False,
@@ -47,7 +62,13 @@ def probe_video(video_path: str, *,
     except ImportError:
         pass  # psutil not installed — assume enough memory, run parallel
 
-    if run_parallel:
+    # Phase 1c: No-audio fast path — check if video has audio before launching probes.
+    # If no audio, skip audio + semantic probes entirely (saves 30-120s on silent videos).
+    has_audio = _check_has_audio(video_path)
+    if not has_audio:
+        print("[probe] No audio track detected — skipping audio + semantic probes", file=__import__("sys").stderr)
+
+    if run_parallel and has_audio:
         # Run all 3 probes in PARALLEL
         with ThreadPoolExecutor(max_workers=3) as ex:
             futures = {
@@ -68,18 +89,20 @@ def probe_video(video_path: str, *,
                     print(f"[probe] {label} probe failed: {e}", file=__import__("sys").stderr)
     else:
         # Sequential fallback (P2 #8 fix — prevents OOM on constrained machines)
+        # Phase 1c: also handles no-audio case (skip audio + semantic)
         try:
             visual_result = probe_visual(video_path)
         except Exception as e:
             print(f"[probe] visual probe failed: {e}", file=__import__("sys").stderr)
-        try:
-            audio_result = probe_audio(video_path, separate_stems)
-        except Exception as e:
-            print(f"[probe] audio probe failed: {e}", file=__import__("sys").stderr)
-        try:
-            semantic_result = probe_semantic(video_path, 0, score_with_llm, llm_router)
-        except Exception as e:
-            print(f"[probe] semantic probe failed: {e}", file=__import__("sys").stderr)
+        if has_audio:
+            try:
+                audio_result = probe_audio(video_path, separate_stems)
+            except Exception as e:
+                print(f"[probe] audio probe failed: {e}", file=__import__("sys").stderr)
+            try:
+                semantic_result = probe_semantic(video_path, 0, score_with_llm, llm_router)
+            except Exception as e:
+                print(f"[probe] semantic probe failed: {e}", file=__import__("sys").stderr)
 
     if semantic_result is None:
         from kb.tools.probe_semantic import SemanticProfile

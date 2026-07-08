@@ -1002,8 +1002,15 @@ def _execute_step(step: dict, context: dict, input_path: str, output_dir: str) -
         return _execute_loop(step, context, input_path, output_dir)
 
     fn = tool[5:] if tool.startswith("edit.") else ""
+    # READ_ONLY_OPS: functions that return data, not file paths.
+    # These must NOT get an "output" param injected (causes TypeError).
+    # Phase 1a: added auto_chapters, music.describe, music.search, music.download,
+    # music.rank_by_fit — all return data structures, not media files.
     READ_ONLY_OPS = {"info", "transcribe", "detect_scenes", "quality_vmaf",
-                     "quality_full_qc", "scope_analyze", "verify"}
+                     "quality_full_qc", "scope_analyze", "verify",
+                     "auto_chapters", "audio_waveform", "read_metadata",
+                     "extract_colors", "generate_palette", "analyze_video",
+                     "design_quality_check", "inspect", "search_tools"}
     if tool.startswith("edit."):
         if "input" not in params:
             if fn in READ_ONLY_OPS:

@@ -9,7 +9,7 @@ You are an AI video editing agent. You edit **existing** footage — you never g
 ## Core Stack (in order of preference)
 
 1. **Unified Adapter** (`from kb.tools.unified_adapter import edit`) — single import surface combining mcp_video.Client (60+ safe functions) with audited ffmpeg_adapter functions (J/L-cuts, scopes, project files, quality metrics, true-peak loudnorm). Routes around 4 known-buggy mcp_video functions automatically.
-2. **MCP Server** (`mcp-video`, 106 tools, Apache 2.0) — typed, callable tools. `pip install mcp-video`
+2. **MCP Server** (`mcp-video`, ~140 tools, Apache 2.0) — typed, callable tools. `pip install mcp-video`
 3. **Raw FFmpeg** — when MCP lacks a specific capability or you need a complex filter chain
 4. **Whisper** (faster-whisper / whisper.cpp) — transcription for subtitles, silence detection, content-based editing
 5. **Kdenlive/Shotcut MLT** — professional multi-track timeline, generate MLT XML, render with `melt`

@@ -172,6 +172,14 @@ def transcribe(video_path: str, model_size: str = "base",
         _WHISPER_CACHE[cache_key] = model
 
     try:
+        # Phase 1b: Wrap transcription in a timeout to prevent hanging on
+        # large videos or slow CPUs. If it takes >120s, skip gracefully.
+        import signal
+        def _timeout_handler(signum, frame):
+            raise TimeoutError("Whisper transcription timed out after 120s")
+        old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+        signal.alarm(120)  # 120 second timeout
+
         segments_iter, info = model.transcribe(video_path, word_timestamps=True)
         segments: list[TranscriptSegment] = []
         for seg in segments_iter:
@@ -183,8 +191,20 @@ def transcribe(video_path: str, model_size: str = "base",
                 start=seg.start, end=seg.end,
                 text=seg.text.strip(), words=words,
             ))
+        signal.alarm(0)  # cancel timeout
+        signal.signal(signal.SIGALRM, old_handler)  # restore
         return segments, info.language
+    except TimeoutError:
+        import sys
+        print("[probe] Whisper transcription timed out after 120s — skipping", file=sys.stderr)
+        signal.signal(signal.SIGALRM, old_handler)
+        return [], "en"
     except Exception:
+        try:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+        except Exception:
+            pass
         return [], "en"
 
 
