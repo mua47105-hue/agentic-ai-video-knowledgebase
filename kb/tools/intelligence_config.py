@@ -25,7 +25,7 @@ class IntelligenceConfig:
     # ── Relevance Map (relevance_map.py) ──
     hero_threshold: float = 0.6
     """Minimum hero_score for a window to be a hero moment."""
-    dead_zone_threshold: float = 0.25
+    dead_zone_threshold: float = 0.20
     """Maximum score (all dims below) for a window to be a dead zone."""
     adaptive_dead_zone: bool = True
     """If True, lower dead_zone_threshold when max_hero_score < 0.3."""
