@@ -1077,7 +1077,13 @@ def run_recipe(
     # ── Phase 6-9 intelligence layer (optional — degrades gracefully) ──
     # Speed: skip probe entirely if recipe doesn't reference intelligence-layer outputs
     # (most basic recipes just need trim/resize/render — probe is wasted work)
-    content_type = recipe.get("content_type", "vlog")
+    # Phase 0: normalize content_type via single source of truth
+    from kb.tools.content_types import ContentType
+    raw_ct = recipe.get("content_type", "vlog")
+    content_type = ContentType.normalize(raw_ct)
+    if raw_ct != content_type:
+        print(f"Info: Normalized content_type '{raw_ct}' -> '{content_type}'", file=sys.stderr)
+    recipe["content_type"] = content_type  # ensure downstream uses the normalized value
     recipe_steps_yaml = recipe.get("steps", [])
     recipe_needs_intel = _recipe_needs_intelligence(recipe_steps_yaml)
     if _probe_video is not None and recipe_needs_intel:

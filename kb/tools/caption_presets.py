@@ -370,6 +370,42 @@ def caption_ass(
     return output_path
 
 
+# ── Font management (Phase 4: fetch on first run, not vendored) ──
+
+_FONT_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "kb_fonts")
+_FONT_URLS = {
+    "Montserrat-Bold.ttf": "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf",
+    "Inter-Bold.ttf": "https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
+}
+
+
+def _ensure_fonts() -> str:
+    """Download professional fonts to ~/.cache/kb_fonts/ on first run.
+    Returns the fonts directory path, or empty string if download fails."""
+    fonts_dir = _FONT_CACHE_DIR
+    os.makedirs(fonts_dir, exist_ok=True)
+
+    # Check if fonts already exist
+    all_present = all(os.path.exists(os.path.join(fonts_dir, name)) for name in _FONT_URLS)
+    if all_present:
+        return fonts_dir
+
+    # Try to download missing fonts
+    import urllib.request
+    for name, url in _FONT_URLS.items():
+        path = os.path.join(fonts_dir, name)
+        if os.path.exists(path):
+            continue
+        try:
+            urllib.request.urlretrieve(url, path)
+        except Exception:
+            pass  # fall back to system fonts
+
+    # Return dir if at least one font downloaded, else empty (use system fonts)
+    any_present = any(os.path.exists(os.path.join(fonts_dir, name)) for name in _FONT_URLS)
+    return fonts_dir if any_present else ""
+
+
 # ── Integration: one-shot burn-in wrapper ──
 
 def text_subtitles_animated(
@@ -402,11 +438,10 @@ def text_subtitles_animated(
         from kb.tools.ffmpeg_adapter import _run, _check_ffmpeg, _ensure_parent
         _check_ffmpeg()
         _ensure_parent(output)
-        # Pass fontsdir so libass finds the bundled professional fonts (Montserrat, Inter)
-        # Falls back to system fonts if our bundled fonts aren't present.
-        fonts_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "fonts")
-        fonts_dir_abs = os.path.abspath(fonts_dir)
-        fonts_arg = f":fontsdir={fonts_dir_abs}" if os.path.isdir(fonts_dir_abs) else ""
+        # Pass fontsdir so libass finds professional fonts (Montserrat, Inter)
+        # Phase 4: fonts are fetched on first run, not vendored (saves 1.5MB repo size)
+        fonts_dir_abs = _ensure_fonts()
+        fonts_arg = f":fontsdir={fonts_dir_abs}" if fonts_dir_abs else ""
         cmd = [
             "ffmpeg", "-i", input,
             "-vf", f"subtitles={ass_path}{fonts_arg}",

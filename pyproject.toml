@@ -75,7 +75,7 @@ kb-search = "kb.tools.search:main"
 packages = ["kb", "kb.tools"]
 
 [tool.pytest.ini_options]
-testpaths = ["scripts"]
-python_files = ["test_*.py", "verify_*.py"]
-python_functions = ["test_*", "run_tests"]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
 addopts = "-v --tb=short"

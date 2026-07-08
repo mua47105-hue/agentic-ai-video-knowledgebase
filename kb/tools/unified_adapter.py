@@ -192,7 +192,7 @@ from kb.tools.ffmpeg_adapter import (
 import kb.tools.music_adapter as _music_adapter
 
 class _MusicModule(_types.ModuleType):
-    """Convenience module: music.describe(), music.search(), music.download()"""
+    """Convenience module: music.describe(), music.search(), music.download(), music.rank_by_fit()"""
 
     def describe(self, audio_path: str, **kwargs) -> dict:
         return _music_adapter.music_describe(audio_path, **kwargs)
@@ -202,6 +202,9 @@ class _MusicModule(_types.ModuleType):
 
     def download(self, track: dict, **kwargs) -> dict:
         return _music_adapter.music_download(track, **kwargs)
+
+    def rank_by_fit(self, candidates: list[dict], **kwargs) -> list[dict]:
+        return _music_adapter.rank_by_fit(candidates, **kwargs)
 
 music = _MusicModule("music_adapter")
 write_license_sidecar = _music_adapter.write_license_sidecar
