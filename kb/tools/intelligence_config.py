@@ -43,7 +43,7 @@ class IntelligenceConfig:
     """Sigma above which slow-mo is proposed even without audio onset."""
     slowmo_co_occurrence_window: float = 0.8
     """Seconds within which audio onset must co-occur with motion peak."""
-    max_slowmo_per_minute: int = 2
+    max_slowmo_per_minute: int = 3
     """Maximum slow-mo proposals per minute of video."""
 
     # ── Cut Detector (cut_detector.py) ──
