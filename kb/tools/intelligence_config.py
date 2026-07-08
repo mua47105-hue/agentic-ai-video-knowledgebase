@@ -47,7 +47,7 @@ class IntelligenceConfig:
     """Maximum slow-mo proposals per minute of video."""
 
     # ── Cut Detector (cut_detector.py) ──
-    min_cut_score: float = 0.6
+    min_cut_score: float = 0.55
     """Minimum Murch composite score for a cut point to be returned."""
     beat_tolerance: float = 0.1
     """Seconds tolerance for snapping cuts to beats."""
