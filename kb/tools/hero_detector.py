@@ -84,6 +84,13 @@ def detect_hero_moments(source_profile: dict, relevance_map: dict,
             moments.append(_build_hero(vp["timestamp"], 1, "notable_moment",
                                       ["visual"], {"visual": vp}))
 
+    # Temporal decay: suppress clustered peaks (keep only the strongest within 2s)
+    filtered = []
+    for m in moments:
+        too_close = any(abs(m["start"] - f["start"]) < 2.0 and m["level"] <= f["level"] for f in filtered)
+        if not too_close:
+            filtered.append(m)
+    moments = filtered
     moments.sort(key=lambda m: (-m["level"], -m["geometric_mean"]))
     return moments
 
