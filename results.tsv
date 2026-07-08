@@ -30,3 +30,4 @@ ca15749	1.135	4.2	6/6	keep	wire probe aesthetic interval from config
 096e9d1	1.185	4.2	6/6	keep	add temporal decay to hero detector
 72ff825	1.185	4.3	6/6	keep	add content-aware motion sigma to config
 f1cac66	1.185	4.2	6/6	keep	add adaptive threshold multiplier
+0f1fe28	1.186	4.2	6/6	keep	add test for adaptive_threshold_multiplier

@@ -140,7 +140,7 @@ def build_relevance_map(source_profile: dict, content_type: str = "vlog",
             max_h = max(preliminary_scores)
             # Adaptive: use the lower of the fixed threshold and avg*0.5
             # This ensures dead zones are found even when all scores are low
-            adaptive = max(0.10, avg_h * 0.6)
+            adaptive = max(0.10, avg_h * _cfg.adaptive_threshold_multiplier)
             if max_h < 0.3:
                 # Very low-energy content — use adaptive threshold (lower it)
                 dead_zone_threshold = adaptive
