@@ -33,7 +33,7 @@ class IntelligenceConfig:
     """Minimum consecutive seconds to flag as a dead zone."""
 
     # ── Hero Detector (hero_detector.py) ──
-    co_occurrence_window: float = 1.0
+    co_occurrence_window: float = 0.8
     """Seconds within which peaks from different modalities must co-occur."""
 
     # ── Slow-Mo Engine (slowmo_engine.py) ──
@@ -41,7 +41,7 @@ class IntelligenceConfig:
     """Minimum sigma for a motion peak to be considered for slow-mo."""
     motion_only_threshold: float = 3.0
     """Sigma above which slow-mo is proposed even without audio onset."""
-    slowmo_co_occurrence_window: float = 1.0
+    slowmo_co_occurrence_window: float = 0.8
     """Seconds within which audio onset must co-occur with motion peak."""
     max_slowmo_per_minute: int = 2
     """Maximum slow-mo proposals per minute of video."""
