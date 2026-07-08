@@ -51,7 +51,7 @@ class IntelligenceConfig:
     """Minimum Murch composite score for a cut point to be returned."""
     beat_tolerance: float = 0.15
     """Seconds tolerance for snapping cuts to beats."""
-    section_tolerance: float = 1.0
+    section_tolerance: float = 1.5
     """Seconds tolerance for snapping cuts to music section boundaries."""
 
     # ── Probe Layer (probe.py, probe_visual.py, probe_audio.py) ──
