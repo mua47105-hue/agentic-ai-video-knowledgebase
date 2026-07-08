@@ -37,9 +37,9 @@ class TestToolRegistry:
 
 class TestIntelligenceConfig:
     def test_default_config(self):
-        assert DEFAULT.hero_threshold == 0.6
-        assert DEFAULT.co_occurrence_window == 1.0
-        assert DEFAULT.motion_only_threshold == 3.0
+        assert DEFAULT.hero_threshold == 0.5
+        assert DEFAULT.co_occurrence_window == 0.8
+        assert DEFAULT.motion_only_threshold == 2.5
 
     def test_get_config_per_content_type(self):
         social = get_config("social-short")
