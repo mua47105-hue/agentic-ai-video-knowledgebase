@@ -109,8 +109,12 @@ def _hero_score(s: float, e: float, v: float, a: float) -> float:
 
 
 def build_relevance_map(source_profile: dict, content_type: str = "vlog",
-                        hero_threshold: float = 0.6,
-                        dead_zone_threshold: float = 0.25) -> RelevanceMap:
+                        hero_threshold: float = None,
+                        dead_zone_threshold: float = None) -> RelevanceMap:
+    from kb.tools.intelligence_config import get_config
+    _cfg = get_config(content_type)
+    if hero_threshold is None: hero_threshold = _cfg.hero_threshold
+    if dead_zone_threshold is None: dead_zone_threshold = _cfg.dead_zone_threshold
     per_second_raw = source_profile.get("per_second", [])
     if not per_second_raw:
         return RelevanceMap()
