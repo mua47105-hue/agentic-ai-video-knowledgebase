@@ -29,7 +29,7 @@ class IntelligenceConfig:
     """Maximum score (all dims below) for a window to be a dead zone."""
     adaptive_dead_zone: bool = True
     """If True, lower dead_zone_threshold when max_hero_score < 0.3."""
-    dead_zone_min_duration: int = 3
+    dead_zone_min_duration: int = 2
     """Minimum consecutive seconds to flag as a dead zone."""
 
     # ── Hero Detector (hero_detector.py) ──
