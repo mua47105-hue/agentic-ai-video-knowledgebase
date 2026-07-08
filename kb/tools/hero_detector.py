@@ -20,7 +20,10 @@ from __future__ import annotations
 
 
 def detect_hero_moments(source_profile: dict, relevance_map: dict,
-                        co_occurrence_window: float = 1.0) -> list[dict]:
+                        co_occurrence_window: float = None) -> list[dict]:
+    from kb.tools.intelligence_config import get_config
+    _cfg = get_config(source_profile.get('metadata', {}).get('content_type', 'vlog'))
+    if co_occurrence_window is None: co_occurrence_window = _cfg.co_occurrence_window
     """Detect cross-modal hero moments by fusing peaks from audio, visual, semantic."""
     audio_peaks = _extract_audio_peaks(source_profile)
     visual_peaks = _extract_visual_peaks(source_profile)
