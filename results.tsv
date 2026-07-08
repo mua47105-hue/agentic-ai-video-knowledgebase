@@ -18,3 +18,4 @@ abbd34c	0.987	4.3	6/6	keep	add config tuning tests (15 new tests)
 e0770cc	1.037	4.2	6/6	keep	add livestream-highlights recipe
 ceee4a1	1.088	4.2	6/6	keep	add gaming-highlights recipe
 da07c78	1.139	4.2	6/6	keep	add promo-trailer recipe
+75b8bbc	1.139	4.2	6/6	keep	wire IntelligenceConfig into relevance_map defaults

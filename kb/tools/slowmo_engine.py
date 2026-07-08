@@ -32,8 +32,12 @@ SFX = {
 
 
 def find_slowmo_moments(source_profile: dict, relevance_map: dict,
-                        max_per_minute: int = 2,
-                        motion_only_threshold: float = 3.0) -> list[dict]:
+                        max_per_minute: int = None,
+                        motion_only_threshold: float = None) -> list[dict]:
+    from kb.tools.intelligence_config import get_config
+    _cfg = get_config(source_profile.get('metadata', {}).get('content_type', 'vlog'))
+    if max_per_minute is None: max_per_minute = _cfg.max_slowmo_per_minute
+    if motion_only_threshold is None: motion_only_threshold = _cfg.motion_only_threshold
     """Find candidate slow-mo moments in the video.
 
     P1 #6 fix: relaxed co-occurrence window from 0.3s to 1.0s (real-world footage has
