@@ -17,7 +17,7 @@ related: [unified-adapter, hyperframes, color-space-management]
 - **License**: Apache 2.0
 - **Install**: `pip install mcp-video`
 - **Version**: 1.5.1 (pinned)
-- **Surface**: 106 tools via `mcp_video.Client`
+- **Surface**: ~140 tools via `mcp_video.Client`
 - **Stack**: Python → FFmpeg CLI. No GPU required.
 
 ## Architecture

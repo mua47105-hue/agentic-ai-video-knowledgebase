@@ -99,9 +99,9 @@ Major SKILL.md rewrite: merged editing-craft's 12 Hard Rules (two-pass loudnorm,
 
 ## [2026-07-06] scripts | One-command setup + universal agent prompt
 
-Created `scripts/setup.sh` — installs FFmpeg, mcp-video, faster-whisper, Whisper MCP server, CutAgent, optional Ollama + Qwen2.5-Coder 7B. Single curl command: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash`
+Created `setup.sh` — installs FFmpeg, mcp-video, faster-whisper, Whisper MCP server, CutAgent, optional Ollama + Qwen2.5-Coder 7B. Single curl command: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/setup.sh | bash`
 
-Created `scripts/agent-prompt.md` — definitive copy-paste system prompt for any LLM agent. INIT → PROBE → CLASSIFY → PLAN → BUILD → VERIFY workflow with all Hard Rules and production techniques.
+Created `agent-prompt.md (deleted — see SKILL.md)` — definitive copy-paste system prompt for any LLM agent. INIT → PROBE → CLASSIFY → PLAN → BUILD → VERIFY workflow with all Hard Rules and production techniques.
 
 ## [2026-07-06] enhance | FFmpeg reference — production-grade commands
 
@@ -126,7 +126,7 @@ Architected, built, and verified the Unified Adapter — a single import surface
 - **`kb/tools/unified_adapter.py`** — 151-symbol single import surface routing: 7 overlapping functions → mcp_video, 92 new capabilities → mcp_video, 3 audited → ffmpeg_adapter, 29 unique → ffmpeg_adapter, plus VLM, decision_log, classifier, auto_recover, music, reframe. Supports `edit.info()`, `edit.merge()`, etc.
 - **`scripts/verify_mcp_video.py`** — 99/99 checks on mcp_video 1.5.1 availability
 - **`scripts/verify_unified_adapter.py`** — 159/159 checks on routing correctness
-- **`kb/wiki/entities/mcp-video.md`** — entity page documenting 106 tools + 4 known bugs
+- **`kb/wiki/entities/mcp-video.md`** — entity page documenting ~140 tools + 4 known bugs
 - **`kb/wiki/concepts/unified-adapter.md`** — concept page with architecture diagram
 
 ### Changes
@@ -179,7 +179,7 @@ Updated all configuration and documentation files to reflect new capabilities. A
 
 ## [2026-07-07] phase-2 | Prove-it-stays-fixed — testing infrastructure + CI
 
-Created `scripts/doctor.py` — single-command environment diagnostic (binaries, Python deps, KB modules, config). Checks 25+ items with pass/fail per check and exact FIX command for each failure. Supports `--quiet` and `--json` modes.
+Created `doctor.py (deleted — use tests/)` — single-command environment diagnostic (binaries, Python deps, KB modules, config). Checks 25+ items with pass/fail per check and exact FIX command for each failure. Supports `--quiet` and `--json` modes.
 
 Created `scripts/make_synthetic_clip.py` — deterministic synthetic test footage generator using only `ffmpeg -f lavfi`. Produces talking_head (30s), podcast (60s), vlog_short (15s vertical), and silent (10s no-audio) clips. Fully reproducible, no downloads.
 
@@ -208,7 +208,7 @@ Wired both into `kb/tools/recipe_runner.py`:
 - Post-rendering recovery loop: quality gate failures trigger strategy lookup and step re-execution
 - Manifest now includes `classification` and `recovery_attempts` fields
 
-Updated `SKILL.md` Phase 0 and Phase 5 with as-of-Phase 3 notes referencing classifier and auto_recover. Updated `scripts/agent-prompt.md` RECOVER section. Added Concrete implementation section to `kb/wiki/concepts/self-evaluation-loop.md`. Added `--recommend` and `--force-content-type` to README.md quick start.
+Updated `SKILL.md` Phase 0 and Phase 5 with as-of-Phase 3 notes referencing classifier and auto_recover. Updated `agent-prompt.md (deleted — see SKILL.md)` RECOVER section. Added Concrete implementation section to `kb/wiki/concepts/self-evaluation-loop.md`. Added `--recommend` and `--force-content-type` to README.md quick start.
 
 ## [2026-07-08] phase-4 | Intelligence add-ons — VLM verification, music ranking, decision audit log, sources ingest, wiki coverage gaps, lint script
 
@@ -228,10 +228,10 @@ Created 5 source-of-record pages: `sources/ebu-r128.md`, `sources/itu-r-bs-1770-
 Created 5 new pages: `concepts/color-space-management.md`, `concepts/multi-cam-editing.md`, `concepts/chroma-key.md`, `guides/hardware-acceleration.md`, `entities/hyperframes.md`. Each has ≥150 words of body content, full frontmatter, and ≥2 inbound links from other wiki pages. Updated `index.md` with new pages under appropriate sections. Added inbound links from `ffmpeg-command-reference.md`, `video-agent.md`, `recipe-packs.md`, `mcp-video.md`, and `unified-adapter.md`.
 
 ### Lint script + CI
-Created `scripts/lint_wiki.py` — checks for orphan pages, broken internal links, missing frontmatter fields, stale pages, and generative-model focus leaks. Writes findings to `kb/wiki/backlog.md` (committed). Integrated into CI as `lint-wiki` job (fails on broken links). Fixed 1 broken link (SKILL.md reference from unified-adapter.md) and 2 missing `tags` frontmatter fields found by first run.
+Created `lint_wiki.py (deleted — use tests/)` — checks for orphan pages, broken internal links, missing frontmatter fields, stale pages, and generative-model focus leaks. Writes findings to `kb/wiki/backlog.md` (committed). Integrated into CI as `lint-wiki` job (fails on broken links). Fixed 1 broken link (SKILL.md reference from unified-adapter.md) and 2 missing `tags` frontmatter fields found by first run.
 
 ### Current tally
-25 entities (16 active + 9 archived), 7 concepts, 5 guides, 3 comparisons, 1 chart, 6 recipe packs, 5 source pages, root SKILL.md, `scripts/lint_wiki.py`. Extended tools: MLT export, compliance reporter, content adapter, VLM adapter (gated), decision_log, classifier, auto_recover.
+25 entities (16 active + 9 archived), 7 concepts, 5 guides, 3 comparisons, 1 chart, 6 recipe packs, 5 source pages, root SKILL.md, `lint_wiki.py (deleted — use tests/)`. Extended tools: MLT export, compliance reporter, content adapter, VLM adapter (gated), decision_log, classifier, auto_recover.
 
 ## [2026-07-07] phase-6-9 | Multimodal intelligence layer (probe, relevance map, cut detection, pacing, slow-mo, music sync, plan critic, hero detector, memory, reviewer)
 
@@ -265,7 +265,7 @@ Implemented Phases 6-9 of the intelligence plan — the framework now **sees, kn
 - `recipe_runner.py` wired with all 11 new modules; manifest now includes `source_profile_metadata`, `relevance_map_summary`, `hero_moments`, `cut_points`, `paced_plan_summary`, `slowmo_proposals`, `music_sync_plan`, `edit_plan`, `memory_hints`, `review_result`, `memory_writes`
 - New CLI flags: `--probe-only` (save SourceProfile JSON), `--analyze-only` (full intelligence pipeline analysis without recipe execution), `--no-intelligent-planning` (skip LLM)
 - `requirements.txt` + `pyproject.toml` updated with `[probe]` and `[probe-heavy]` extras (all optional)
-- `scripts/doctor.py` checks all 13 new modules + 10 new optional deps
+- `doctor.py (deleted — use tests/)` checks all 13 new modules + 10 new optional deps
 - `scripts/test_phase6_9_intelligence.py` — 93 tests, all passing
 
 ### License discipline
@@ -292,7 +292,7 @@ Phase 5 completes the intelligence architecture vision by integrating 9 patterns
 - `kb/tools/auto_recover.py` — added AVE's `retry_if` YAML gate parsing (`parse_retry_if_from_yaml`) + evaluation (`evaluate_retry_gates`) + Crayotter's selective revision (`get_downstream_steps`, `selective_revision_plan`)
 - `kb/tools/intelligent_planner.py` — now uses LLMRouter for per-task model routing, accepts editing_blueprint as prior input, produces storyboard as a first-class artifact
 - `kb/tools/recipe_runner.py` — wired in all 5 new modules + artifact store + retry_if gate evaluation + build orchestrator; manifest extended with intents, editing_blueprint, build_orchestration, retry_gates_triggered, artifacts fields
-- `scripts/doctor.py` — checks 5 new Phase 5 modules
+- `doctor.py (deleted — use tests/)` — checks 5 new Phase 5 modules
 
 ### What this completes
 The full 8-module intelligent pipeline (M0 PROBE → M0.5 CLASSIFY → M1 RELEVANCE MAP → M2 PLAN → M2.5 CRITIC → M3 BUILD → M4 VERIFY → M5 MEMORY) now has all Phase 5 architecture patterns integrated:

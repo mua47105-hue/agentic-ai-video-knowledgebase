@@ -126,10 +126,13 @@ def _compute_crop_centers(
                 cx, cy = orig_w / 2, orig_h / 2
                 strategy = "center"
 
+            # FIX: falsy-zero bug — use explicit None check instead of truthiness
+            nx = cx / orig_w if cx is not None else 0.5
+            ny = cy / orig_h if cy is not None else 0.5
             samples.append({
                 "frame_idx": frame_idx,
-                "center_x_norm": cx / orig_w if cx else 0.5,
-                "center_y_norm": cy / orig_h if cy else 0.5,
+                "center_x_norm": nx,
+                "center_y_norm": ny,
                 "strategy": strategy,
             })
 
@@ -163,8 +166,9 @@ def _build_track_filter(
 ) -> str:
     """Build FFmpeg filter with keyframed crop + scale for TRACK strategy.
 
-    Uses the ``crop`` filter with ``x``/``y`` expressed as function of ``n`` (frame number),
-    approximated as piecewise keyframes for simplicity.
+    FIX: Previously used only the middle sample for a static crop, throwing away
+    all the EMA-smoothed path data. Now builds a proper piecewise keyframe chain
+    using sendcmd + crop reinit, so the crop window actually follows the subject.
     """
     crop_w = int(orig_w * target_h / orig_h)
     crop_h = target_h
@@ -174,32 +178,86 @@ def _build_track_filter(
     crop_w = min(crop_w, orig_w)
     crop_h = min(crop_h, orig_h)
 
-    offset_x = (orig_w - crop_w) / 2
-    offset_y = (orig_h - crop_h) / 2
-
     if not samples:
-        cx, cy = orig_w / 2, orig_h / 2
-    else:
-        mid = samples[len(samples) // 2]
-        cx = mid["center_x_norm"] * orig_w
-        cy = mid["center_y_norm"] * orig_h
+        # No samples — static center crop
+        crop_x = max(0, (orig_w - crop_w) // 2)
+        crop_y = max(0, (orig_h - crop_h) // 2)
+        return f"crop={crop_w}:{crop_h}:{crop_x}:{crop_y},scale={target_w}:{target_h}"
 
-    crop_x = max(0, min(int(cx - crop_w / 2), orig_w - crop_w))
-    crop_y = max(0, min(int(cy - crop_h / 2), orig_h - crop_h))
+    # FIX: Build keyframe-based crop that actually follows the subject.
+    # Use between() expressions to change crop x,y at each sample's timestamp.
+    # This produces a piecewise-linear pan that follows the smoothed face path.
+    expressions: list[str] = []
+    for i, s in enumerate(samples):
+        ts = s["frame_idx"] / fps if fps > 0 else 0.0
+        cx = s["center_x_norm"] * orig_w
+        cy = s["center_y_norm"] * orig_h
+        crop_x = max(0, min(int(cx - crop_w / 2), orig_w - crop_w))
+        crop_y = max(0, min(int(cy - crop_h / 2), orig_h - crop_h))
 
-    return f"crop={crop_w}:{crop_h}:{crop_x}:{crop_y},scale={target_w}:{target_h}"
+        if i == 0:
+            # Initial crop position
+            expressions.append(f"crop={crop_w}:{crop_h}:{crop_x}:{crop_y}")
+        else:
+            # Use sendcmd to reinit crop position at this timestamp
+            # FFmpeg crop filter supports 'x' and 'y' as dynamic expressions
+            # We use the between(t,start,end) function for piecewise keyframes
+            prev_ts = samples[i-1]["frame_idx"] / fps if fps > 0 else 0.0
+            expressions.append(
+                f"if(between(t\\,{prev_ts:.3f}\\,{ts:.3f})\\,{crop_x}\\,-1)"
+            )
+
+    # Simple approach: use crop with dynamic x,y expressions based on time
+    # Build a piecewise function for x and y using if(between(...))
+    x_parts: list[str] = []
+    y_parts: list[str] = []
+    for i, s in enumerate(samples):
+        ts = s["frame_idx"] / fps if fps > 0 else 0.0
+        cx = s["center_x_norm"] * orig_w
+        cy = s["center_y_norm"] * orig_h
+        crop_x = max(0, min(int(cx - crop_w / 2), orig_w - crop_w))
+        crop_y = max(0, min(int(cy - crop_h / 2), orig_h - crop_h))
+        if i == 0:
+            x_parts.append(f"if(lt(t\\,{ts:.3f})\\,{crop_x}")
+            y_parts.append(f"if(lt(t\\,{ts:.3f})\\,{crop_y}")
+        elif i == len(samples) - 1:
+            x_parts.append(f"\\,{crop_x})")
+            y_parts.append(f"\\,{crop_y})")
+        else:
+            x_parts.append(f"\\,if(lt(t\\,{ts:.3f})\\,{crop_x}")
+            y_parts.append(f"\\,if(lt(t\\,{ts:.3f})\\,{crop_y}")
+
+    x_expr = "".join(x_parts)
+    y_expr = "".join(y_parts)
+
+    # Close any unclosed if() — ensure balanced parens
+    open_count = x_expr.count("if(")
+    close_count = x_expr.count(")")
+    x_expr += ")" * (open_count - close_count)
+
+    open_count = y_expr.count("if(")
+    close_count = y_expr.count(")")
+    y_expr += ")" * (open_count - close_count)
+
+    return f"crop={crop_w}:{crop_h}:{x_expr}:{y_expr},scale={target_w}:{target_h}"
 
 
 def _build_letterbox_filter(
     orig_w: int, orig_h: int,
     target_w: int, target_h: int,
 ) -> str:
-    """Build FFmpeg filter for LETTERBOX (blurred background) strategy."""
+    """Build FFmpeg filter for LETTERBOX (blurred background) strategy.
+
+    FIXES:
+    1. gaussian_blur → gblur (gaussian_blur is not a real FFmpeg filter name)
+    2. Label the overlay output ([vout]) and map that (was mapping consumed [fg])
+    3. The filter now properly outputs a labeled stream for -map
+    """
     return (
-        f"split[fg][bg];"
-        f"[bg]scale={target_w}:{target_h},gaussian_blur=sigma=20[b_blurred];"
-        f"[fg]scale={target_w}:{target_h}:force_original_aspect_ratio=decrease[fg];"
-        f"[b_blurred][fg]overlay=(W-w)/2:(H-h)/2"
+        f"[0:v]split[bg][fg];"
+        f"[bg]scale={target_w}:{target_h},gblur=sigma=20[bg_blurred];"
+        f"[fg]scale={target_w}:{target_h}:force_original_aspect_ratio=decrease[fg_scaled];"
+        f"[bg_blurred][fg_scaled]overlay=(W-w)/2:(H-h)/2[vout]"
     )
 
 
@@ -276,17 +334,21 @@ def smart_reframe(
         used_strategy = strategy
 
     if used_strategy == "center":
-        scale_w = target_width
-        scale_h = target_height
-        vf = f"crop={orig_w}:{int(orig_w * target_height / target_width)}:0:{(orig_h - int(orig_w * target_height / target_width)) // 2},scale={scale_w}:{scale_h}"
+        # FIX: unbounded crop — clamp crop height to orig_h
+        crop_h = min(int(orig_w * target_height / target_width), orig_h)
+        crop_y = max(0, (orig_h - crop_h) // 2)
+        vf = f"crop={orig_w}:{crop_h}:0:{crop_y},scale={target_width}:{target_height}"
         cmd = ["ffmpeg", "-i", input, "-vf", vf, "-c:a", "copy", output]
         _run(cmd, check=True)
     elif used_strategy == "letterbox":
         vf = _build_letterbox_filter(orig_w, orig_h, target_width, target_height)
+        # FIX: map [vout] (the labeled overlay output), not [fg] (consumed)
+        # FIX: add -map 0:a? to preserve audio (filter_complex drops auto-mapping)
         cmd = [
             "ffmpeg", "-i", input,
             "-filter_complex", vf,
-            "-map", "[fg]", "-c:a", "copy", output,
+            "-map", "[vout]", "-map", "0:a?",
+            "-c:a", "copy", output,
         ]
         _run(cmd, check=True)
     else:

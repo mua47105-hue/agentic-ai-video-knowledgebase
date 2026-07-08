@@ -582,7 +582,7 @@ This lets agents resume interrupted work and learn from past failures.
 ## One-Command Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/setup.sh | bash
 ```
 
 ## Sources

@@ -29,7 +29,7 @@ Hyperframes is an open-source (MIT) Remotion-based library for generating progra
 - **License**: MIT — fully open source, free for commercial use.
 - **Runtime**: Requires Node.js 18+ installed on the system.
 - **Rendering**: Slower than equivalent FFmpeg filter chains (Remotion renders each frame individually via Puppeteer). A 10-second animated title card takes ~30 seconds to render on modern hardware.
-- **Setup**: The repo's `scripts/setup.sh` checks for Node.js and will install Hyperframes if requested, but it is optional — FFmpeg fallbacks exist for every Hyperframes tool.
+- **Setup**: The repo's `setup.sh` checks for Node.js and will install Hyperframes if requested, but it is optional — FFmpeg fallbacks exist for every Hyperframes tool.
 
 ## Limitations
 - **Performance**: Rendering speed is the primary limitation. For simple overlays (static text, basic shapes), FFmpeg's `drawtext` filter is faster and should be preferred.

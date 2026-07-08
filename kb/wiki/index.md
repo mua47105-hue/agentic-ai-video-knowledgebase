@@ -36,7 +36,7 @@ updated: 2026-07-08
 
 ## Entities — MCP & Tooling
 
-- [mcp-video](entities/mcp-video) — MCP server, 106 tools, primary surface via unified adapter
+- [mcp-video](entities/mcp-video) — MCP server, ~140 tools, primary surface via unified adapter
 - [Hyperframes](entities/hyperframes) — Remotion-based kinetic text and animated overlays
 - [MCP Servers for Video Editing](entities/mcp-video-servers) — 15+ free MCP servers wrapping FFmpeg (119 tools in best)
 - [MakeMyClip Editor](entities/make-my-clip) — "FFmpeg you can talk to", zero-config, MIT
@@ -78,8 +78,8 @@ updated: 2026-07-08
 ## Skills
 
 - [SKILL.md](../../SKILL.md) — Complete agent skill for AI video editing (root level, auto-discoverable). 6-phase decision engine, 26 Hard Rules, production techniques, MCP tool mappings, error recovery, contradiction log.
-- [Agent Prompt](../../scripts/agent-prompt.md) — Universal copy-paste prompt for any LLM agent. CLASSIFY → PROBE → PLAN → BUILD → VERIFY workflow.
-- [Setup Script](../../scripts/setup.sh) — One-command install: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash`
+- [Agent Prompt](../../agent-prompt.md (deleted — see SKILL.md)) — Universal copy-paste prompt for any LLM agent. CLASSIFY → PROBE → PLAN → BUILD → VERIFY workflow.
+- [Setup Script](../../setup.sh) — One-command install: `curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/setup.sh | bash`
 
 ## Charts
 

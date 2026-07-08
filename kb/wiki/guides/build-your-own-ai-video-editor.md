@@ -360,7 +360,7 @@ Your choice of MCP server depends on your Level:
 
 | Level | Recommended Server | Why |
 |-------|-------------------|-----|
-| 1 (MVP) | mcp-video | 106 tools, covers everything |
+| 1 (MVP) | mcp-video | ~140 tools, covers everything |
 | 2 (Workstation) | mcp-video + whisper-transcribe | Add transcription |
 | 3 (Autonomous) | mcp-video + whisper + cutagent | Declarative EDL for complex edits |
 | 4 (Professional) | mcp-video + mcp-kdenlive | Timeline control + FFmpeg |

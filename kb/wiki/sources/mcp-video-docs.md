@@ -23,12 +23,12 @@ Repository: https://github.com/anthropics/mcp-video (or successor organization)
 - Licensing: Apache 2.0 — permissive for commercial and research use.
 
 ## How this connects to the wiki
-- **mcp-video entity**: The `entities/mcp-video.md` page documents all 106 tools and their categories. This source is the primary reference for that page.
+- **mcp-video entity**: The `entities/mcp-video.md` page documents all ~140 tools and their categories. This source is the primary reference for that page.
 - **Unified Adapter**: `kb/tools/unified_adapter.py` routes 151 symbols — 106 from mcp-video plus 45 from the proprietary ffmpeg_adapter and new modules — and automatically routes around the 4 known bugs listed above.
 - **MCP Server Matrix**: The `comparisons/mcp-servers-2026.md` comparison ranks mcp-video as the most comprehensive MCP video server. This source supports that ranking.
 
 ## Contradictions with existing pages
-- The wiki states "106 tools" but the exact count may vary between PyPI releases. The wiki should be updated if subsequent releases change the count.
+- The wiki states "~140 tools" but the exact count may vary between PyPI releases. The wiki should be updated if subsequent releases change the count.
 
 ## Notes
 - mcp-video requires Python 3.10+ and an MCP-compatible host (Claude Desktop, OpenCode, Cursor, custom MCP client).

@@ -14,7 +14,7 @@ updated: 2026-07-08
 
 Before the unified adapter, agents had to choose between:
 
-1. `mcp_video.Client` — 106 tools but 4 have bugs
+1. `mcp_video.Client` — ~140 tools but 4 have bugs
 2. `ffmpeg_adapter` — 44 functions, all audited, but no access to 60+ new capabilities
 
 The unified adapter solves this by providing a single `edit` module that routes each function to the best implementation:
@@ -69,6 +69,6 @@ If `mcp_video` is not installed, the unified adapter still works — all ffmpeg_
 
 ## Related
 
-- [mcp-video](../entities/mcp-video) — the MCP server providing 106 tools
+- [mcp-video](../entities/mcp-video) — the MCP server providing ~140 tools
 - [SKILL.md](../../../SKILL.md) — agent skill with all 26 Hard Rules
 - [ffmpeg_adapter.py](../../tools/ffmpeg_adapter.py) — audited fallback (deprecated)

@@ -25,7 +25,7 @@ python3 -m kb.tools.recipe_runner recipes/podcast-to-shorts.yaml input.mp4
 |------|---------|
 | `SKILL.md` | Video editing agent skill (auto-loaded first, ~250 lines of rules + TOC) |
 | `kb/tools/` | Python tool library (42 modules) |
-| `recipes/` | YAML recipe packs (8 one-command workflows) |
+| `recipes/` | YAML recipe packs (12 one-command workflows) |
 | `kb/wiki/` | Reference wiki (entities, concepts, guides, comparisons) |
 | `tests/` | Test suite (pytest, run with `pytest tests/`) |
 

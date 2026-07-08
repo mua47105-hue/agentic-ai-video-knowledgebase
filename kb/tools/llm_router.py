@@ -28,21 +28,22 @@ import typing as t
 # Default model per task type. Order: cloud-first (if API key set) then local fallback.
 DEFAULT_MODELS: dict[str, list[str]] = {
     "plan": [
-        "claude-3-5-sonnet-20241022",   # via litellm if ANTHROPIC_API_KEY set
+        "claude-sonnet-4-20250514",      # via litellm if ANTHROPIC_API_KEY set
         "gpt-4o",                         # via litellm if OPENAI_API_KEY set
         "ollama/qwen2.5-coder:7b",        # local fallback (always available if ollama running)
     ],
     "critic": [
         "gpt-4o-mini",                    # different family than planner (ensemble diversity)
-        "claude-3-5-haiku-20241022",
+        "claude-haiku-4-20250506",        # FIX: added Anthropic for reviewer ensemble
         "ollama/qwen2.5-coder:7b",
     ],
     "reviewer": [
         "gpt-4o-mini",
+        "claude-haiku-4-20250506",        # FIX: added Anthropic entry (was missing — broke ensemble)
         "ollama/qwen2.5-coder:7b",
     ],
     "research": [
-        "claude-3-5-sonnet-20241022",
+        "claude-sonnet-4-20250514",
         "ollama/qwen2.5-coder:7b",
     ],
     "score": [
@@ -121,7 +122,11 @@ class LLMRouter:
                     "timeout": timeout,
                 }
                 if json_mode:
-                    kwargs["format"] = "json"
+                    # FIX: litellm uses response_format for cloud models, format for ollama
+                    if model.startswith("ollama/"):
+                        kwargs["format"] = "json"
+                    else:
+                        kwargs["response_format"] = {"type": "json_object"}
                 response = self._litellm.completion(**kwargs)
                 return response.choices[0].message.content
             except Exception:

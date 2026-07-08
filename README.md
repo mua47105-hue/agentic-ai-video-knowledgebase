@@ -9,7 +9,7 @@ git clone <repo-url>
 cd agentic-ai-video-knowledgebase
 
 # One-command install (FFmpeg + MCP + Whisper + optional Ollama)
-curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/scripts/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mua47105-hue/agentic-ai-video-knowledgebase/main/setup.sh | bash
 ```
 
 ### Browse the wiki
@@ -151,7 +151,7 @@ Then:
 - **1 chart**: Model quality vs speed vs cost
 - **6 recipe packs**: Podcast-to-shorts, wedding highlights, sports highlights, documentary assembly, tutorial editing, vlog assembly
 - **5 source pages**: EBU R128, ITU-R BS.1770-4, Netflix Sound Mix Spec, ELLMPEG paper, mcp-video docs
-- **Scripts**: One-command setup (`scripts/setup.sh`), universal agent prompt (`scripts/agent-prompt.md`), wiki lint (`scripts/lint_wiki.py`)
+- **Scripts**: One-command setup (`setup.sh`), universal agent prompt (`agent-prompt.md (deleted — see SKILL.md)`), wiki lint (`lint_wiki.py (deleted — use tests/)`)
 - **Extended tools**: MLT export, compliance reporter, content adapter (Pexels + Freesound), VLM adapter (gated), decision logger, classifier, auto-recover engine
 
 ## Requirements
