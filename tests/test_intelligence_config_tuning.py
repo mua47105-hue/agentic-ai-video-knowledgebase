@@ -48,3 +48,7 @@ class TestTunedConfig:
 
     def test_section_tolerance_is_1_5(self):
         assert DEFAULT.section_tolerance == 1.5, f"Expected 1.5, got {DEFAULT.section_tolerance}"
+
+    def test_adaptive_threshold_multiplier_exists(self):
+        assert hasattr(DEFAULT, 'adaptive_threshold_multiplier')
+        assert DEFAULT.adaptive_threshold_multiplier == 0.6
