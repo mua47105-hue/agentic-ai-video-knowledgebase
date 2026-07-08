@@ -84,13 +84,13 @@ class TestSlowMoEngine:
 
 
 class TestHeroDetector:
-    def test_co_occurrence_window_is_1s(self):
-        """P3 #14: co-occurrence window should default to 1.0s (was 0.5s)."""
+    def test_co_occurrence_window_uses_config(self):
+        """P3 #14: co-occurrence window should be config-driven (default=None = use IntelligenceConfig)."""
         import inspect
         from kb.tools.hero_detector import detect_hero_moments
         sig = inspect.signature(detect_hero_moments)
-        assert sig.parameters["co_occurrence_window"].default == 1.0, (
-            f"Expected 1.0, got {sig.parameters['co_occurrence_window'].default}"
+        assert sig.parameters["co_occurrence_window"].default is None, (
+            f"Expected None (config-driven), got {sig.parameters['co_occurrence_window'].default}"
         )
 
 
