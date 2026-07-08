@@ -33,7 +33,10 @@ MURCH_WEIGHTS = {
 def find_cut_points(source_profile: dict, relevance_map: dict,
                     content_type: str = "vlog",
                     target_density: str = "medium",
-                    min_score: float = 0.6) -> list[dict]:
+                    min_score: float = None) -> list[dict]:
+    from kb.tools.intelligence_config import get_config
+    _cfg = get_config(content_type)
+    if min_score is None: min_score = _cfg.min_cut_score
     """Find candidate cut points and score each on Murch's 6 dimensions."""
     candidates: set[float] = set()
 
