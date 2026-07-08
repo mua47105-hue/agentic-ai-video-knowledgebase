@@ -383,7 +383,7 @@ _AESTHETIC_MODEL = None
 
 
 def probe_aesthetic(video_path: str, fps: float, duration: float,
-                    sample_every_n_seconds: float = 4.0) -> list[dict]:
+                    sample_every_n_seconds: float = None) -> list[dict]:
     """Aesthetic scoring. Default samples every 4s (was 2s) — 2x speedup, low quality risk
     (aesthetic scores are smooth across adjacent frames; 4s still captures the distribution)."""
     try:
@@ -610,6 +610,7 @@ def probe_visual(video_path: str) -> VisualProfile:
         components.append("scdet_fallback" if not _scenedetect_available else "pyscenedetect_no_scenes")
 
     # 3. Motion energy + peaks (opencv) — sample every 2nd frame (2x speedup, no quality loss for peak detection)
+    # motion uses config stride
     motion_features, profile.motion_peaks = probe_motion(
         video_path, profile.fps, profile.duration, sample_stride=_cfg.motion_sample_stride
     )

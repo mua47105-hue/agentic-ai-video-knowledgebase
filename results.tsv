@@ -23,3 +23,4 @@ a3d4c6c	1.139	4.3	6/6	keep	wire IntelligenceConfig into slowmo_engine
 5b82121	1.135	4.2	6/6	keep	wire IntelligenceConfig into hero_detector
 f656699	1.135	4.1	6/6	keep	wire IntelligenceConfig into cut_detector
 24b7aa0	1.135	4.2	6/6	keep	add gaming config override
+52e4d15	1.135	4.2	6/6	keep	wire probe_visual stride from config
