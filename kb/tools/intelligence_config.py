@@ -63,7 +63,7 @@ class IntelligenceConfig:
     """Sample every Nth frame for face/emotion detection."""
 
     # ── Speech Detection Gate (probe_semantic.py) ──
-    speech_cv_threshold: float = 0.15
+    speech_cv_threshold: float = 0.12
     """Coefficient of variation below which audio is considered non-speech."""
 
 
