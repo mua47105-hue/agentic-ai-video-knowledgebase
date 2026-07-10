@@ -25,6 +25,7 @@ class ContentType(str, enum.Enum):
     TALKING_HEAD = "talking-head"
     MUSIC_VIDEO = "music-video"
     EVENT = "event"
+    LIVESTREAM = "livestream"
 
     @classmethod
     def all_values(cls) -> list[str]:

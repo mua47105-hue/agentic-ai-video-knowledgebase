@@ -40,3 +40,8 @@ easyocr>=1.7.0,<2.0
 litellm>=1.40.0,<2.0
 # mediapipe, hsemotion, open-clip-torch, pyannote.audio are optional and
 # auto-detected at runtime — see probe_visual.py / probe_audio.py.
+
+# Phase A-C: New tool adapters
+rembg>=2.0.50,<3.0
+auto-editor>=24.0.0,<30.0
+moviepy>=2.0,<3.0

@@ -42,7 +42,11 @@ updated: 2026-07-08
 - [MakeMyClip Editor](entities/make-my-clip) — "FFmpeg you can talk to", zero-config, MIT
 - [CutAgent](entities/cutagent) — FFmpeg for AI agents, declarative EDL, structured JSON output
 - [CutRoom](entities/cutroom) — Local-first film editor, CPU whisper, session resume/fork
-- [Whisper Transcription Ecosystem](entities/whisper-ecosystem) — Free local subtitle/transcription tools
+- [Whisper Transcription Ecosystem](entities/whisper-ecosystem)
+- [rembg](entities/rembg) — background removal via U2Net (gated, opt-in)
+- [auto-editor](entities/auto-editor) — auto silence/motion cut, EDL export
+- [MoviePy](entities/moviepy) — Python-native NLE for complex composites (HR#31)
+- [essentia](entities/essentia) — AGPLv3, license-disqualified; use librosa instead — Free local subtitle/transcription tools
 - [video-use](entities/video-use) — Claude Code skill, transcript-first, self-evaluating (14.8k stars)
 
 ## Entities — Agentic Frameworks

@@ -64,6 +64,13 @@ log "Installing yt-dlp (online music sources)..."
 python3 -m pip install --upgrade yt-dlp -q || warn "yt-dlp install had issues"
 ok "yt-dlp installed"
 
+# rembg (background removal — gated, opt-in)
+python3 -m pip install rembg -q || warn "rembg install failed"
+# auto-editor (auto silence/motion cut — MIT)
+python3 -m pip install auto-editor -q || warn "auto-editor install failed"
+# MoviePy (complex composition — MIT)
+python3 -m pip install moviepy -q || warn "MoviePy install failed"
+
 # 7. Optional Ollama
 if ! command -v ollama &>/dev/null; then
   echo ""

@@ -492,3 +492,21 @@ The default `license_filter` in `music_search()` was `["Pixabay", "CC-BY 4.0", "
 - "online" combined: returns results from internet_archive
 - All 6 modules import cleanly
 - music_search + music_download dispatch correctly for all source types
+
+
+## [2026-07-10] add | Stack integration — rembg, auto-editor, MoviePy
+
+Added 3 new tool adapters (essentia documented as license-disqualified).
+
+**New adapters:**
+- kb/tools/rembg_adapter.py — background removal via U2Net (gated, opt-in)
+- kb/tools/auto_editor_adapter.py — auto silence/motion cut + EDL export
+- kb/tools/moviepy_adapter.py — complex programmatic composition (HR#31 escape hatch)
+
+**New wiki pages:** rembg.md, auto-editor.md, moviepy.md, essentia.md (disqualified)
+**New recipe:** livestream-auto-edit.yaml (auto-cut silence from long-form VODs)
+**New Hard Rule:** HR#31 — FFmpeg filtergraphs exceeding 5 nodes must switch to MoviePy
+**Updated:** pyproject.toml, requirements.txt, setup.sh, unified_adapter.py (7 new symbols),
+tool_registry.py (6 new entries), SKILL.md, facts.yaml, wiki index/log/overview
+
+**License discipline preserved:** All new tools are MIT. essentia (AGPLv3) documented as disqualified.

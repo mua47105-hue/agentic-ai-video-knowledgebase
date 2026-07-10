@@ -1,0 +1,45 @@
+name: livestream-auto-edit
+description: Auto-cut silence/motion from long-form livestream VODs
+version: 1.0
+content_type: livestream
+target_platform: youtube
+output_lufs: -14
+
+steps:
+  - operation: probe
+    tool: edit.info
+    output: source_profile
+
+  - operation: auto_edit_analyze
+    tool: edit.auto_edit_analyze
+    output: cut_analysis
+
+  - operation: auto_edit
+    tool: edit.auto_edit
+    params:
+      margin: 0.3
+      no_noise: false
+
+  - operation: export_edl
+    tool: edit.auto_edit_to_edl
+    params:
+      edl_path: "highlights.edl"
+      target_nle: premiere
+    output: edl_export
+
+  - operation: loudnorm
+    tool: edit.loudnorm_limited
+    params:
+      target_lufs: -14
+      true_peak: -1.0
+
+  - operation: render
+    tool: edit.render
+    params:
+      profile: youtube_streaming
+
+quality_gates:
+  - check: edit.verify
+  - check: edit.quality_full_qc
+  - check: lufs_within_1db
+    target: -14

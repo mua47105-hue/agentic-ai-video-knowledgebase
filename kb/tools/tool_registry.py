@@ -117,6 +117,15 @@ TOOL_REGISTRY: list[ToolEntry] = [
     ToolEntry("project_resume", "project", "Resume from project file"),
     ToolEntry("project_snapshot", "project", "Snapshot before destructive op", related_hard_rules=["HR#23"]),
     ToolEntry("project_audit_report", "project", "Generate audit report", related_hard_rules=["HR#24"]),
+    # ── Background removal ──
+    ToolEntry("remove_background", "fx", "Remove background via rembg (U2Net). Gated — set REMBG_ENABLED=1.", has_ffmpeg_fallback=False, related_hard_rules=["HR#26"]),
+    ToolEntry("remove_background_video", "fx", "Video background removal (frame-by-frame via rembg + ffmpeg pipe).", has_ffmpeg_fallback=False, related_hard_rules=["HR#23", "HR#26"]),
+    # ── Auto-editor ──
+    ToolEntry("auto_edit", "project", "auto-editor silence/motion auto-cut (faster than silence_remove on long-form).", has_ffmpeg_fallback=True, related_hard_rules=["HR#7"]),
+    ToolEntry("auto_edit_to_edl", "project", "Export EDL/XML from auto-editor analysis for NLE handoff (Premiere/Resolve/FCP).", has_ffmpeg_fallback=False, related_hard_rules=["HR#22"]),
+    # ── MoviePy ──
+    ToolEntry("moviepy_compose", "project", "MoviePy programmatic composition (complex PiP/animation) — escape hatch for >5-node filtergraphs.", has_ffmpeg_fallback=True, related_hard_rules=["HR#26", "HR#31"]),
+    ToolEntry("moviepy_concatenate", "project", "MoviePy concatenation with crossfade transitions.", has_ffmpeg_fallback=True, related_hard_rules=["HR#6"]),
 ]
 
 

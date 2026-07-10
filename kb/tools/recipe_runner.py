@@ -399,22 +399,28 @@ def _validate_recipe(recipe_path: str) -> list[str]:
 
 
 def _check_tool_resolves(tool: str) -> t.Optional[str]:
-    """Check if a tool string resolves to a callable. Returns error string or None."""
+    """Check if a tool string resolves to a callable. Returns error string or None.
+    For gated adapters (rembg, auto-editor, MoviePy), the tool may not be present
+    when the dependency isn't installed — this is NOT a validation error, just a warning."""
+    GATED_TOOLS = {"remove_background", "remove_background_video",
+                   "auto_edit", "auto_edit_analyze", "auto_edit_to_edl",
+                   "moviepy_compose", "moviepy_concatenate"}
     if tool.startswith("edit."):
+        fn_name = tool[5:]
         from kb.tools.unified_adapter import edit
-        fn = getattr(edit, tool[5:], None)
+        fn = getattr(edit, fn_name, None)
         if fn is None:
-            return f"edit.{tool[5:]} does not exist on unified_adapter"
+            if fn_name in GATED_TOOLS:
+                return None  # gated tool — not an error if dep not installed
+            return f"edit.{fn_name} does not exist on unified_adapter"
         if not callable(fn):
-            return f"edit.{tool[5:]} is not callable"
+            return f"edit.{fn_name} is not callable"
     elif tool.startswith("music."):
         from kb.tools.unified_adapter import music
         fn = getattr(music, tool[6:], None)
         if fn is None:
             return f"music.{tool[6:]} does not exist"
     elif tool.startswith("recipe."):
-        # recipe.* tools are resolved at runtime by _resolve_tool
-        # just check the name looks valid
         if len(tool) < 8:
             return f"recipe tool name too short: {tool}"
     return None

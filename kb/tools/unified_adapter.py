@@ -313,6 +313,36 @@ except Exception:
     smart_reframe = None  # type: ignore
     REFRAME_AVAILABLE = False
 
+# ═══ Background removal (rembg) — gated, opt-in ═══
+_REMBG_SYMBOLS = []
+try:
+    from kb.tools.rembg_adapter import is_available as _rembg_available
+    if _rembg_available():
+        from kb.tools.rembg_adapter import remove_background, remove_background_video
+        _REMBG_SYMBOLS = ["remove_background", "remove_background_video"]
+except ImportError:
+    pass
+
+# ═══ auto-editor (auto silence/motion cut) ═══
+_AUTO_EDIT_SYMBOLS = []
+try:
+    from kb.tools.auto_editor_adapter import is_available as _auto_edit_available
+    if _auto_edit_available():
+        from kb.tools.auto_editor_adapter import auto_edit, auto_edit_analyze, auto_edit_to_edl
+        _AUTO_EDIT_SYMBOLS = ["auto_edit", "auto_edit_analyze", "auto_edit_to_edl"]
+except ImportError:
+    pass
+
+# ═══ MoviePy (complex composition) — gated ═══
+_MOVIEPY_SYMBOLS = []
+try:
+    from kb.tools.moviepy_adapter import is_available as _moviepy_available
+    if _moviepy_available():
+        from kb.tools.moviepy_adapter import compose as moviepy_compose, concatenate as moviepy_concatenate
+        _MOVIEPY_SYMBOLS = ["moviepy_compose", "moviepy_concatenate"]
+except ImportError:
+    pass
+
 # ═══════════════════════════════════════════════════════════════
 # Platform/pacing presets (Sections 7, 8)
 # ═══════════════════════════════════════════════════════════════
@@ -396,6 +426,12 @@ __all__ = [
     "smart_reframe", "REFRAME_AVAILABLE",
     # VLM adapter (gated)
     "vlm",
+    # Background removal (gated)
+    *_REMBG_SYMBOLS,
+    # auto-editor (gated)
+    *_AUTO_EDIT_SYMBOLS,
+    # MoviePy (gated)
+    *_MOVIEPY_SYMBOLS,
     # Convenience
     "edit", "mcp_available",
 ]

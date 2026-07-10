@@ -4,17 +4,17 @@
 
 repo:
   name: agentic-ai-video-knowledgebase
-  version: "0.8.0"
+  version: "0.9.0"
 
 modules:
-  kb_tools_count: 42
-  recipes_count: 12
-  test_count: 194
+  kb_tools_count: 45
+  recipes_count: 13
+  test_count: 210
 
 tools:
   mcp_video_tool_count: "~140"
   ffmpeg_adapter_tool_count: "~37"
-  unified_adapter_symbol_count: "~151"
+  unified_adapter_symbol_count: "~158"
 
 files:
   setup_script: "setup.sh"
